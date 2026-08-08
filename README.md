@@ -2,7 +2,7 @@
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/pterodactyl/panel/ci.yaml?label=Tests&style=for-the-badge&branch=1.0-develop)
 ![Discord](https://img.shields.io/badge/DISCORD-0_ONLINE-brightgreen?style=for-the-badge&logo=Discord&logoColor=white)
-![GitHub Releases](https://img.shields.io/github/downloads/pterodactyl/panel/latest/total?style=for-the-badge)
+![GitHub Releases](https://img.shields.io/github/downloads/vkdavidgames/UramAPanel/latest/total?style=for-the-badge&label=DOWNLOADS%40LATEST)
 ![GitHub contributors](https://img.shields.io/github/contributors/pterodactyl/panel?style=for-the-badge)
 ![Build Status](https://img.shields.io/badge/builds-failing-red?style=for-the-badge)
 ![Server Status](https://img.shields.io/badge/servers-deleted-red?style=for-the-badge)
