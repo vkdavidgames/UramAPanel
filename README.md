@@ -5,6 +5,7 @@
 ![GitHub Releases](https://img.shields.io/github/downloads/pterodactyl/panel/latest/total?style=for-the-badge)
 ![GitHub contributors](https://img.shields.io/github/contributors/pterodactyl/panel?style=for-the-badge)
 ![Build Status](https://img.shields.io/badge/builds-failing-red?style=for-the-badge)
+![Server Status](https://img.shields.io/badge/servers-deleted-red?style=for-the-badge)
 
 # Pterodactyl Panel
 
