@@ -84,6 +84,17 @@ const LoginContainer = ({ history }: RouteComponentProps) => {
                             Login
                         </Button>
                     </div>
+                    
+                    {/* INTEGRÁLT REGISZTRÁCIÓS GOMB */}
+                    <div style={{ marginTop: '15px', textAlign: 'center' }}>
+                        <a 
+                            href="/auth/register" 
+                            style={{ display: 'block', width: '100%', padding: '12px', backgroundColor: '#27272a', color: '#fff', textAlign: 'center', fontWeight: 'bold', borderRadius: '6px', textDecoration: 'none', border: '1px solid #3f3f46', fontSize: '0.875rem' }}
+                        >
+                            Új Fiók Regisztrációja
+                        </a>
+                    </div>
+
                     {recaptchaEnabled && (
                         <Reaptcha
                             ref={ref}
