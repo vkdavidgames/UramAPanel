@@ -1,57 +1,37 @@
-import React, { useEffect, useState } from 'react';
-import { ServerContext } from '@/state/server';
-import http from '@/api/http';
-import Spinner from '@/components/elements/Spinner';
-import Switch from '@/components/elements/Switch';
+<?php
 
-interface DNSRecord {
-    id: string;
-    name: string;
-    content: string;
-    proxied: boolean;
+namespace Pterodactyl\Http\Controllers\Api\Client\Servers;
+
+use Illuminate\Http\Request;
+use Pterodactyl\Models\Server;
+use Pterodactyl\Services\Cloudflare\CloudflareDNSService;
+use Pterodactyl\Http\Controllers\Api\Client\ClientApiController;
+
+class CloudflareController extends ClientApiController
+{
+    protected CloudflareDNSService $dnsService;
+
+    public function __construct(CloudflareDNSService $dnsService)
+    {
+        parent::__construct();
+        $this->dnsService = $dnsService;
+    }
+
+    public function index(Server $server)
+    {
+        $record = $this->dnsService->getRecordForServer($server);
+        return response()->json(['record' => $record]);
+    }
+
+    public function updateProxy(Request $request, Server $server)
+    {
+        $request->validate(['proxied' => 'required|boolean']);
+        
+        $record = $this->dnsService->updateProxyStatus(
+            $server, 
+            $request->input('proxied')
+        );
+
+        return response()->json(['record' => $record]);
+    }
 }
-
-export default () => {
-    const uuid = ServerContext.useStoreState(state => state.server.data!.uuid);
-    const [loading, setLoading] = useState(true);
-    const [record, setRecord] = useState<DNSRecord | null>(null);
-
-    useEffect(() => {
-        http.get(`/api/client/servers/${uuid}/cloudflare`)
-            .then(({ data }) => setRecord(data.record))
-            .finally(() => setLoading(false));
-    }, [uuid]);
-
-    const toggleProxy = (proxied: boolean) => {
-        setLoading(true);
-        http.post(`/api/client/servers/${uuid}/cloudflare/proxy`, { proxied })
-            .then(({ data }) => setRecord(data.record))
-            .finally(() => setLoading(false));
-    };
-
-    if (loading) return <Spinner size={'large'} centered />;
-
-    return (
-        <div className={'bg-neutral-800 p-6 rounded-lg shadow-md'}>
-            <h2 className={'text-xl font-bold text-neutral-100 mb-4'}>Cloudflare DNS & Proxy Kezelő</h2>
-            {record ? (
-                <div className={'flex items-center justify-between'}>
-                    <div>
-                        <p className={'text-neutral-300'}>DNS Rekord: <code className={'text-yellow-400'}>{record.name}</code></p>
-                        <p className={'text-neutral-300'}>Mögöttes IP: <code className={'text-green-400'}>{record.content}</code></p>
-                    </div>
-                    <div className={'flex items-center space-x-3'}>
-                        <span className={'text-sm text-neutral-400'}>Cloudflare Proxy (Orange Cloud)</span>
-                        <Switch
-                            name={'proxied'}
-                            checked={record.proxied}
-                            onChange={e => toggleProxy(e.target.checked)}
-                        />
-                    </div>
-                </div>
-            ) : (
-                <p className={'text-neutral-400'}>Nincs aktív Cloudflare DNS rekord ehhez a szerverhez.</p>
-            )}
-        </div>
-    );
-};
