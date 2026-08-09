@@ -35,7 +35,6 @@ const RightNavigation = styled.div`
         }
     }
 `;
-
 export default () => {
     const name = useStoreState((state: ApplicationStore) => state.settings.data!.name);
     const rootAdmin = useStoreState((state: ApplicationStore) => state.user.data!.rootAdmin);
