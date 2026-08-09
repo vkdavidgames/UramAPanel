@@ -67,7 +67,7 @@ export default () => {
                 <RightNavigation className={'flex h-full items-center justify-center'}>
                     <SearchContainer />
                     
-                    {/* ÖNELLÁTÓ GOMB ÉS MODAL BLOKK */}
+                    {/* ÖNELLÁTÓ IGÉNYLŐ GOMB ÉS IFRAME MODAL KONTÉNER */}
                     <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
                         <button 
                             onClick={() => {
