@@ -1,8 +1,8 @@
 <?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+header("Content-Type: application/json");
+ini_set('display_errors', 0);
 
-// Kézzel beolvassuk a Pterodactyl .env fájlját a biztonságos jelszavakért
+// Biztonságos .env beolvasás az adatbázis eléréséhez
 $env_file = '/var/www/pterodactyl/.env';
 if (file_exists($env_file)) {
     $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -18,180 +18,136 @@ $db_user = $_ENV['DB_USERNAME'];
 $db_pass = $_ENV['DB_PASSWORD'];
 $db_name = $_ENV['DB_DATABASE'];
 
+$pterodactyl_url = $_ENV['APP_URL'];
+$pterodactyl_api_key = $_ENV['API_KEY_SERVER'];
+
 // CLOUDFLARE CONFIG
-$cf_email = $_ENV['CLOUDFLARE_EMAIL']; 
-$cf_api_key = $_ENV['CLOUDFLARE_API_TOKEN']; 
-$cf_zone_id = $_ENV['CLOUDFLARE_ZONE_ID'];  
+$cf_email = $_ENV['CLOUDFLARE_EMAIL'];
+$cf_api_key = $_ENV['CLOUDFLARE_API_TOKEN'];
+$cf_zone_id = $_ENV['CLOUDFLARE_ZONE_ID'];
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-?>
-<!DOCTYPE html>
-<html lang="hu">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DavidGames - Szerver Igénylő Központ</title>
-    <style>
-        body { background: #0c0c0e !important; color: #e4e4e7 !important; font-family: system-ui, sans-serif !important; display: block !important; margin: 0 !important; padding: 15px !important; box-sizing: border-box !important; width: 100% !important; height: auto !important; }
-        .config-box { background: #141417 !important; padding: 20px !important; border-radius: 12px !important; border: 1px solid #27272a !important; width: 100% !important; max-width: 380px !important; box-shadow: 0 20px 40px rgba(0,0,0,0.6) !important; box-sizing: border-box !important; margin: 0 auto !important; }
-        h2 { margin-top: 0 !important; margin-bottom: 15px !important; text-align: center !important; color: #34d399 !important; font-size: 1.4rem !important; }
-        .user-info { background: #1c1c21 !important; padding: 10px !important; border-radius: 6px !important; border: 1px solid #2a2a32 !important; text-align: center !important; margin-bottom: 15px !important; font-size: 0.85rem !important; color: #a1a1aa !important; }
-        .user-info strong { color: #34d399 !important; }
-        #claimForm { display: grid !important; grid-template-columns: 1fr !important; gap: 12px !important; width: 100% !important; box-sizing: border-box !important; }
-        .form-group { display: grid !important; grid-template-columns: 1fr !important; width: 100% !important; box-sizing: border-box !important; }
-        label { display: block !important; margin-bottom: 6px !important; font-size: 0.75rem !important; font-weight: bold !important; color: #a1a1aa !important; text-transform: uppercase !important; }
-        select, input[type="text"], input[type="range"] { width: 100% !important; background: #1c1c21 !important; border: 1px solid #2a2a32 !important; border-radius: 6px !important; color: #fff !important; padding: 10px !important; box-sizing: border-box !important; font-size: 0.9rem !important; display: block !important; }
-        .range-container { display: flex !important; justify-content: space-between !important; align-items: center !important; background: #1c1c21 !important; padding: 8px 12px !important; border-radius: 6px !important; border: 1px solid #2a2a32 !important; margin-top: 4px !important; }
-        .range-value { font-weight: bold !important; color: #34d399 !important; font-family: monospace !important; }
-        .disabled-info { font-size: 0.7rem !important; margin-top: 4px !important; font-weight: 500 !important; display: block !important; }
-        button { width: 100% !important; padding: 12px !important; background: #34d399 !important; border: none !important; border-radius: 6px !important; color: #064e3b !important; font-weight: bold !important; cursor: pointer !important; font-size: 1rem !important; margin-top: 15px !important; display: block !important; }
-        button:hover { background: #059669 !important; color: #fff !important; }
-        #log-msg { margin-top: 15px !important; text-align: center !important; font-weight: bold !important; font-size: 0.9rem !important; }
-    </style>
-</head>
-<body>
-    <div class="config-box">
-        <h2>Szerver Igénylés</h2>
-        <div id="user_display" class="user-info">Azonosítás folyamatban...</div>
-        <form id="claimForm">
-            <div class="form-group">
-                <label for="game">Válassz Játékot</label>
-                <select id="game" name="game"><option value="minecraft">Minecraft (Java Edition)</option></select>
-            </div>
-            <div class="form-group">
-                <label for="server_type">Szerver Típusa</label>
-                <select id="server_type" name="server_type" onchange="toggleLoader()">
-                    <option value="vanilla">Minecraft Vanilla (Tiszta gyári)</option>
-                    <option value="modded">Modolt Minecraft (Forge / Fabric / NeoForge)</option>
-                    <option value="plugins">Pluginolt Minecraft (Paper / Purpur)</option>
-                    <option value="bungeecord">BungeeCord / Velocity Proxy</option>
-                </select>
-            </div>
-            <div id="loader_container" class="form-group" style="display: none;">
-                <label id="loader_title" for="loader">Szoftver Típusa</label>
-                <select id="loader" name="loader">
-                    <option value="none">Válassz típust...</option>
-                </select>
-                <div id="loader_ver_hide" style="margin-top: 10px !important;">
-                    <label for="loader_version">Mod Loader Verzió</label>
-                    <input type="text" id="loader_version" name="loader_version" value="latest">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="custom_subdomain">Kívánt Aldomain név</label>
-                <input type="text" id="custom_subdomain" name="custom_subdomain" placeholder="Pl. uramaram" required>
-            </div>
-            <div class="form-group">
-                <label for="allocation_type">Foglalás Típusa</label>
-                <select id="allocation_type" name="allocation_type" onchange="toggleAllocationFields()">
-                    <option value="port" selected>Csak Port lefoglalása (Egyedi Port)</option>
-                    <option value="full">Teljes Aldomain lefoglalása (Alapértelmezett 25565 port) 🌍</option>
-                </select>
-            </div>
-            <div id="custom_port_container" class="form-group">
-                <label for="custom_port">Kívánt Egyedi Port</label>
-                <input type="text" id="custom_port" name="custom_port" placeholder="Hagyd üresen automatikus porthoz">
-            </div>
-            <div class="form-group">
-                <label for="mc_version">Minecraft Verzió</label>
-                <input type="text" id="mc_version" name="mc_version" value="1.21.1" required>
-            </div>
-            <div class="form-group">
-                <label for="java_version">Java Környezet</label>
-                <select id="java_version" name="java_version">
-                    <option value="25">Java 25</option>
-                    <option value="21" selected>Java 21</option>
-                    <option value="17">Java 17</option>
-                    <option value="8">Java 8</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Rendszermemória (RAM)</label>
-                <input type="range" id="ram" min="1024" max="2048" value="1024" step="1024" oninput="updateRamValue(this.value)">
-                <div class="range-container"><span>RAM mérete:</span><span id="ram_display" class="range-value">1 GB</span></div>
-                <div id="ram_info" class="disabled-info" style="color: #fbbf24 !important;">📦 Alapcsomag (Max 2GB).</div>
-            </div>
-            <div class="form-group">
-                <label>Tárhely (Disk Space)</label>
-                <input type="range" id="disk" min="2048" max="5120" value="2048" step="1024" oninput="updateDiskValue(this.value)">
-                <div class="range-container"><span>Tárhely mérete:</span><span id="disk_display" class="range-value">2 GB</span></div>
-                <div id="disk_info" class="disabled-info" style="color: #fbbf24 !important;">📦 Alapcsomag Tárhely (Max 5GB).</div>
-            </div>
-            <button type="submit">Szerver Életre Keltése 🚀</button>
-        </form>
-        <div id="log-msg"></div>
-    </div>
-    <script>
-        let globalUserId = 0; let globalUsername = "";
-        function updateRamValue(val) { document.getElementById('ram_display').innerText = (val / 1024) + " GB (" + val + " MB)"; }
-        function updateDiskValue(val) { document.getElementById('disk_display').innerText = (val / 1024) + " GB (" + val + " MB)"; }
-        function toggleAllocationFields() {
-            const type = document.getElementById('allocation_type').value;
-            document.getElementById('custom_port_container').style.display = (type === 'full') ? 'none' : 'block';
-            if(type === 'full') document.getElementById('custom_port').value = '25565';
-        }
-        function toggleLoader() {
-            const type = document.getElementById('server_type').value;
-            const container = document.getElementById('loader_container');
-            const loaderSelect = document.getElementById('loader');
-            const verHide = document.getElementById('loader_ver_hide');
-            if (type === 'modded') {
-                container.style.display = 'block'; verHide.style.display = 'block';
-                loaderSelect.innerHTML = '<option value="neoforge">NeoForge</option><option value="forge">Forge</option><option value="fabric">Fabric</option>';
-            } else if (type === 'plugins') {
-                container.style.display = 'block'; verHide.style.display = 'none';
-                loaderSelect.innerHTML = '<option value="paper">Paper</option><option value="purpur">Purpur</option>';
-            } else { container.style.display = 'none'; }
-        }
-        async function identifyUser() {
-            try {
-                const siteConfig = window.parent.SiteConfiguration;
-                if (siteConfig && siteConfig.user) {
-                    globalUserId = siteConfig.user.id; globalUsername = siteConfig.user.username;
-                } else {
-                    const metaUser = window.parent.document.querySelector('meta[name="user-id"]');
-                    globalUserId = metaUser ? parseInt(metaUser.getAttribute('content')) : 1;
-                    globalUsername = metaUser ? metaUser.getAttribute('username') : "DavidAdmin";
-                }
-                document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong>";
-                checkPromoStatus(globalUserId);
-            } catch (e) {
-                globalUserId = 1; globalUsername = "DavidAdmin";
-                document.getElementById('user_display').innerHTML = "🔧 Teszt üzemmód (ID: 1)";
-                setupPromoLimits(true);
+if ($conn->connect_error) { die(json_encode(["status" => "error", "message" => "Adatbázis hiba."])); }
+
+if (isset($_POST['check_uid'])) {
+    $c_uid = intval($_POST['check_uid']);
+    $stmt = $conn->prepare("SELECT has_free_server, `rank` FROM users_security_meta WHERE pterodactyl_user_id = ?");
+    $stmt->bind_param("i", $c_uid); $stmt->execute(); $stmt->bind_result($h_free, $u_rank); $stmt->fetch(); $stmt->close();
+    echo json_encode(["has_promo" => intval($h_free), "user_rank" => intval($u_rank)]);
+    exit();
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $user_id = intval($_POST['user_id'] ?? 0);
+    $username = trim($_POST['username'] ?? '');
+    $game = trim($_POST['game'] ?? 'minecraft');
+    $type = trim($_POST['server_type'] ?? 'vanilla');
+    $loader = trim($_POST['loader'] ?? 'none');
+    $loader_version = trim($_POST['loader_version'] ?? 'latest');
+    $mc_version = trim($_POST['mc_version'] ?? '1.21.1');
+    $java_version = intval($_POST['java_version'] ?? 21);
+    $requested_ram = intval($_POST['ram'] ?? 1024);
+    $requested_disk = intval($_POST['disk'] ?? 2048);
+    $custom_subdomain = trim($_POST['custom_subdomain'] ?? '');
+    $allocation_type = trim($_POST['allocation_type'] ?? 'port');
+    $custom_port = intval($_POST['custom_port'] ?? 0);
+
+    if ($user_id === 0 || empty($custom_subdomain)) { die(json_encode(["status" => "error", "message" => "Hiányzó adatok!"])); }
+    $clean_subdomain = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $custom_subdomain));
+
+    $user_rank = 0; $has_free_server = 0;
+    $stmt = $conn->prepare("SELECT has_free_server, `rank` FROM users_security_meta WHERE pterodactyl_user_id = ?");
+    $stmt->bind_param("i", $user_id); $stmt->execute(); $stmt->bind_result($has_free_server, $user_rank); $stmt->fetch(); $stmt->close();
+
+    if ($user_rank !== 1 && $has_free_server !== 1) { die(json_encode(["status" => "error", "message" => "Nincs igénylési jogod!"])); }
+
+    // DUPLIKÁCIÓ ELLENŐRZÉS
+    $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE pterodactyl_user_id = ?");
+    $stmt->bind_param("i", $user_id); $stmt->execute(); $stmt->store_result();
+    if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "Már van aktív szervered!"])); }
+    $stmt->close();
+
+    // GEOROUTING AUTOMATIZÁCIÓ NODE 1 és NODE 2 KÖZÖTT
+    $selected_node = 1;
+    $stmt = $conn->prepare("SELECT node_id, COUNT(*) as cnt FROM (SELECT 1 as node_id UNION SELECT 2 as node_id) as n LEFT JOIN allocated_domains ON 1=1 GROUP BY node_id ORDER BY cnt ASC LIMIT 1");
+    $stmt->execute(); $stmt->bind_result($best_node, $count); $stmt->fetch(); $stmt->close();
+    if($best_node > 0) { $selected_node = $best_node; }
+
+    // PORT KIOSZTÁS AZ ELOSZTOTT RENDSZERBEN
+    $assigned_port = 0;
+    if ($allocation_type === 'full') {
+        $assigned_port = 25565;
+        $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = 25565 AND node_id = ?");
+        $stmt->bind_param("i", $selected_node); $stmt->execute(); $stmt->store_result();
+        if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "A 25565 főport ezen a Node-on már foglalt!"])); }
+        $stmt->close();
+    } else {
+        if ($custom_port >= 25565 && $custom_port <= 26000) {
+            $assigned_port = $custom_port;
+            $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = ? AND node_id = ?");
+            $stmt->bind_param("ii", $assigned_port, $selected_node); $stmt->execute(); $stmt->store_result();
+            if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "A kért egyedi port ezen a Node-on foglalt!"])); }
+            $stmt->close();
+        } else {
+            $assigned_port = 25566;
+            while (true) {
+                $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = ? AND node_id = ?");
+                $stmt->bind_param("ii", $assigned_port, $selected_node); $stmt->execute(); $stmt->store_result();
+                if ($stmt->num_rows === 0) { $stmt->close(); break; }
+                $stmt->close(); $assigned_port++;
             }
         }
-        async function checkPromoStatus(uid) {
-            try {
-                const formData = new FormData(); formData.append('check_uid', uid);
-                const res = await fetch('server_claim.php', { method: 'POST', body: formData });
-                const json = await res.json();
-                setupPromoLimits(json.user_rank === 1);
-            } catch(err) { setupPromoLimits(false); }
-        }
-        function setupPromoLimits(isVIP) {
-            const ram = document.getElementById('ram'); const disk = document.getElementById('disk');
-            if (isVIP) {
-                ram.max = "4096"; ram.value = "4096"; document.getElementById('ram_info').innerHTML = "💎 VIP: 4GB RAM nyitva!";
-                disk.max = "10240"; disk.value = "10240"; document.getElementById('disk_info').innerHTML = "💎 VIP: 10GB Tárhely nyitva!";
-            } else { ram.max = "2048"; disk.max = "5120"; }
-            updateRamValue(ram.value); updateDiskValue(disk.value);
-        }
-        window.addEventListener('DOMContentLoaded', () => { toggleLoader(); toggleAllocationFields(); identifyUser(); });
+    }
+    $egg_id = 1; $startup_cmd = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JAR_FILE}}";
+    if ($type === 'modded') { $egg_id = ($loader === 'neoforge') ? 15 : 2; }
+    elseif ($type === 'plugins') { $egg_id = ($loader === 'purpur') ? 16 : 1; }
+    elseif ($type === 'bungeecord') { $egg_id = 3; $docker_image = "ghcr.io/pterodactyl/yolks:java_11"; }
 
-        document.getElementById('claimForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const logDiv = document.getElementById('log-msg'); logDiv.style.color = '#fbbf24'; logDiv.innerText = 'Szerver konténer építése folyamatban...';
-            const formData = new FormData(this);
-            formData.append('user_id', globalUserId); formData.append('username', globalUsername);
-            try {
-                const response = await fetch('server_claim.php', { method: 'POST', body: formData });
-                const result = await response.json();
-                if (result.status === 'success') {
-                    logDiv.style.color = '#34d399'; logDiv.innerHTML = "✨ " + result.message + "<br>IP: <strong>" + result.domain + "</strong>";
-                } else { logDiv.style.color = '#f87171'; logDiv.innerText = result.message; }
-            } catch (err) { logDiv.style.color = '#f87171'; logDiv.innerText = 'Hiba történt.'; }
-        });
-    </script>
-</body>
-</html>
+    $docker_image = "ghcr.io/pterodactyl/yolks:java_" . $java_version;
+
+    // PTERODACTYL API HÍVÁS
+    $serverData = [
+        "name" => $username . " - " . $clean_subdomain, "user" => $user_id, "nest" => 1, "egg" => $egg_id, "node" => $selected_node,
+        "docker_image" => $docker_image, "startup" => $startup_cmd,
+        "limits" => ["memory" => $requested_ram, "swap" => 0, "disk" => $requested_disk, "io" => 500, "cpu" => 100],
+        "environment" => ["SERVER_JAR_FILE" => "server.jar", "MINECRAFT_VERSION" => $mc_version, "MOD_VERSION" => $loader_version, "FABRIC_VERSION" => $loader_version],
+        "feature_limits" => ["databases" => 0, "allocations" => 1, "backups" => 1], "allocation" => ["default" => $assigned_port]
+    ];
+
+    $ch = curl_init($pterodactyl_url . "/api/application/servers");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($serverData));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer " . $pterodactyl_api_key, "Content-Type: application/json", "Accept: application/json"]);
+    $response = curl_exec($ch); $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    $responseData = json_decode($response, true);
+
+    if ($http_code === 201 && isset($responseData['attributes']['id'])) {
+        $server_uuid = $responseData['attributes']['uuid'];
+
+        // ADATBÁZIS MENTÉS
+        $stmt = $conn->prepare("INSERT INTO allocated_domains (pterodactyl_user_id, pterodactyl_server_id, subdomain, port, allocation_type, node_id) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("issisi", $user_id, $server_uuid, $clean_subdomain, $assigned_port, $allocation_type, $selected_node);
+        $stmt->execute(); $stmt->close();
+
+        // CLOUDFLARE DNS GENERÁLÁS V4
+        $target_host = ($selected_node === 2) ? "node2.davidgames.uk" : "uramapanel.davidgames.uk";
+        if ($allocation_type === 'full') {
+            $dns_payload = ["type" => "CNAME", "name" => $clean_subdomain . ".davidgames.uk", "content" => $target_host, "ttl" => 1, "proxied" => false];
+        } else {
+            $dns_payload = ["type" => "SRV", "name" => "_minecraft._tcp." . $clean_subdomain . ".davidgames.uk", "data" => ["service" => "_minecraft", "proto" => "_tcp", "name" => $clean_subdomain, "priority" => 0, "weight" => 5, "port" => $assigned_port, "target" => $target_host], "ttl" => 1, "proxied" => false];
+        }
+
+        $cf_ch = curl_init("https://cloudflare.com" . $cf_zone_id . "/dns_records");
+        curl_setopt($cf_ch, CURLOPT_RETURNTRANSFER, true); curl_setopt($cf_ch, CURLOPT_POST, true);
+        curl_setopt($cf_ch, CURLOPT_POSTFIELDS, json_encode($dns_payload));
+        curl_setopt($cf_ch, CURLOPT_HTTPHEADER, ["X-Auth-Email: " . $cf_email, "X-Auth-Key: " . $cf_api_key, "Content-Type: application/json"]);
+        curl_exec($cf_ch); curl_close($cf_ch);
+
+        $final_ip = ($allocation_type === 'full') ? $clean_subdomain . ".davidgames.uk" : $clean_subdomain . ".davidgames.uk:" . $assigned_port;
+        echo json_encode(["status" => "success", "message" => "Szerver sikeresen létrehozva!", "domain" => $final_ip]);
+    } else {
+        $details = $responseData['errors']['detail'] ?? "API Hiba.";
+        echo json_encode(["status" => "error", "message" => "Hiba történt: " . $details]);
+    }
+    exit();
+}
+?>
