@@ -14,7 +14,7 @@ import InstallListener from '@/components/server/InstallListener';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
 
-// EGYEDI RECOVERED COMPONENT IMPORTOK
+// EGYEDI COMPONENT IMPORTOK
 import ConfigEditor from '@/components/server/ConfigEditor';
 import ModsContainer from '@/components/server/ModsContainer';
 import ServerDesignEditor from '@/components/server/ServerDesignEditor';
@@ -75,7 +75,7 @@ export default () => {
                                 <NavigationLinks />
                                 <AdditionalServerItems />
                                 
-                                {/* HELYREÁLLÍTOTT TISZTA MENÜPONTOK EMOJIK NÉLKÜL */}
+                                {/* RECOVERED CUSTOM MENÜPONTOK */}
                                 <NavLink to={`/server/${match.params.id}/extensions`} exact>
                                     Extension Manager
                                 </NavLink>
@@ -103,7 +103,7 @@ export default () => {
                     <TransferListener />
                     <WebsocketHandler />
                     
-                    {/* BELSŐ ULTRA-GYORS REACT ÚTVONALAK BEJEGYZÉSE */}
+                    {/* BELSŐ ÚTVONALAK SZINKRONIZÁLÁSA */}
                     <RouterSwitch>
                         <Route path={`${match.path}/extensions`} exact>
                             <ModsContainer />
