@@ -18,6 +18,11 @@ $db_user = $_ENV['DB_USERNAME'];
 $db_pass = $_ENV['DB_PASSWORD'];
 $db_name = $_ENV['DB_DATABASE'];
 
+// CLOUDFLARE CONFIG
+$cf_email = $_ENV['CLOUDFLARE_EMAIL']; 
+$cf_api_key = $_ENV['CLOUDFLARE_API_TOKEN']; 
+$cf_zone_id = $_ENV['CLOUDFLARE_ZONE_ID'];  
+
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 ?>
 <!DOCTYPE html>
