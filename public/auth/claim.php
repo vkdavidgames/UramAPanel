@@ -2,10 +2,21 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-$db_host = "127.0.0.1";
-$db_user = "signup_admin";
-$db_pass = "DavidGamesSecure2026!";
-$db_name = "panel";
+// Kézzel beolvassuk a Pterodactyl .env fájlját a biztonságos jelszavakért
+$env_file = '/var/www/pterodactyl/.env';
+if (file_exists($env_file)) {
+    $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        list($name, $value) = explode('=', $line, 2);
+        $_ENV[trim($name)] = trim($value);
+    }
+}
+
+$db_host = $_ENV['DB_HOST'];
+$db_user = $_ENV['DB_USERNAME'];
+$db_pass = $_ENV['DB_PASSWORD'];
+$db_name = $_ENV['DB_DATABASE'];
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 ?>
