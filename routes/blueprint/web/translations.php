@@ -1,0 +1,1 @@
+../../../.blueprint/extensions/translations/routers/web.php
