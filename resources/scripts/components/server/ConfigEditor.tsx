@@ -87,7 +87,7 @@ export default () => {
                                     type="text" 
                                     value={config['max-players'] || '20'}
                                     onChange={(e) => handleInputChange('max-players', e.target.value)}
-                                    css={tw`w-full bg-neutral-950 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
+                                    css={tw`w-full bg-neutral-900 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
                                 />
                             </div>
 
@@ -96,7 +96,7 @@ export default () => {
                                 <select 
                                     value={config['difficulty'] || 'easy'} 
                                     onChange={(e) => handleInputChange('difficulty', e.target.value)}
-                                    css={tw`w-full bg-neutral-950 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
+                                    css={tw`w-full bg-neutral-900 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
                                 >
                                     <option value="peaceful">Peaceful (Békés)</option>
                                     <option value="easy">Easy (Könnyű)</option>
@@ -110,7 +110,7 @@ export default () => {
                                 <select 
                                     value={config['pvp'] || 'true'} 
                                     onChange={(e) => handleInputChange('pvp', e.target.value)}
-                                    css={tw`w-full bg-neutral-950 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
+                                    css={tw`w-full bg-neutral-900 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
                                 >
                                     <option value="true">Bekapcsolva (Engedélyezett)</option>
                                     <option value="false">Kikapcsolva (Tiltott)</option>
@@ -122,7 +122,7 @@ export default () => {
                                 <select 
                                     value={config['online-mode'] || 'true'} 
                                     onChange={(e) => handleInputChange('online-mode', e.target.value)}
-                                    css={tw`w-full bg-neutral-950 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
+                                    css={tw`w-full bg-neutral-900 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
                                 >
                                     <option value="true">Csak Prémium (Eredeti Minecraft)</option>
                                     <option value="false">Tört Mód (Minden kliens beléphet)</option>

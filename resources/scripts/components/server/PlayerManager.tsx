@@ -61,7 +61,7 @@ export default () => {
                         <select 
                             value={actionType} 
                             onChange={(e) => setActionType(e.target.value)}
-                            css={tw`w-full bg-neutral-950 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
+                            css={tw`w-full bg-neutral-900 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
                         >
                             <option value="whitelist-add">Hozzáadás a Fehérlistához (whitelist add)</option>
                             <option value="whitelist-remove">Eltávolítás a Fehérlistáról (whitelist remove)</option>
@@ -79,7 +79,7 @@ export default () => {
                             value={playerName}
                             onChange={(e) => setPlayerName(e.target.value)}
                             placeholder="Pl. DavidGames vagy Uram"
-                            css={tw`w-full bg-neutral-950 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
+                            css={tw`w-full bg-neutral-900 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
                         />
                     </div>
 

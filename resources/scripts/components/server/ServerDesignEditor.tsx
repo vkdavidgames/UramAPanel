@@ -82,7 +82,7 @@ export default () => {
                                 value={motd}
                                 onChange={(e) => setMotd(e.target.value)}
                                 placeholder="A DavidGames Minecraft Szervere"
-                                css={tw`w-full bg-neutral-950 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
+                                css={tw`w-full bg-neutral-900 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
                             />
                         </div>
 
@@ -91,7 +91,7 @@ export default () => {
                             <select
                                 value={serverIcon}
                                 onChange={(e) => setServerIcon(e.target.value)}
-                                css={tw`w-full bg-neutral-950 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
+                                css={tw`w-full bg-neutral-900 border border-neutral-800 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-green-500`}
                             >
                                 <option value="default">Default (Gyári DavidGames logó)</option>
                                 <option value="custom">Egyedi (A szervermappába feltöltött server-icon.png)</option>
