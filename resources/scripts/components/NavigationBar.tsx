@@ -13,10 +13,6 @@ import SpinnerOverlay from '@/components/elements/SpinnerOverlay';
 import Tooltip from '@/components/elements/tooltip/Tooltip';
 import Avatar from '@/components/Avatar';
 
-{/* import BeforeNavigation from '@blueprint/components/Navigation/NavigationBar/BeforeNavigation';
-import AdditionalItems from '@blueprint/components/Navigation/NavigationBar/AdditionalItems';
-import AfterNavigation from '@blueprint/components/Navigation/NavigationBar/AfterNavigation'; */}
-
 const RightNavigation = styled.div`
     & > a,
     & > button,
@@ -51,7 +47,6 @@ export default () => {
 
     return (
         <div className={'w-full bg-neutral-900 shadow-md overflow-x-auto'} id={'NavigationBar'}>
-            <BeforeNavigation />
             <SpinnerOverlay visible={isLoggingOut} />
             <div className={'mx-auto w-full flex items-center h-[3.5rem] max-w-[1200px]'}>
                 <div id={'logo'} className={'flex-1'}>
@@ -82,7 +77,8 @@ export default () => {
                                 pointerEvents: 'auto',
                                 background: 'transparent',
                                 border: 'none',
-                                height: '100%'
+                                height: '100%',
+                                cursor: 'pointer'
                             }}
                         >
                             Szerver Igénylés
@@ -117,7 +113,6 @@ export default () => {
                             </a>
                         </Tooltip>
                     )}
-                    <AdditionalItems />
                     <Tooltip placement={'bottom'} content={'Account Settings'}>
                         <NavLink to={'/account'} id={'NavigationAccount'}>
                             <span className={'flex items-center w-5 h-5'}>
@@ -132,7 +127,6 @@ export default () => {
                     </Tooltip>
                 </RightNavigation>
             </div>
-            <AfterNavigation />
         </div>
     );
 };
