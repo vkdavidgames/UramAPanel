@@ -1,0 +1,37 @@
+info:
+  name: "Announce"
+  identifier: "lyrdyannounce"
+  description: "Layeredy Announce integration for Pterodactyl/Blueprint"
+  flags: ""
+  version: "1.1.0"
+  target: "beta-2026-01"
+  author: "Layeredy Software"
+  icon: "public/logo.png"
+  website: "https://layeredy.com/announce"
+
+admin:
+  view: "admin/view.blade.php"
+  controller: "admin/controller.php"
+  css: ""
+  wrapper: ""
+
+dashboard:
+  css: ""
+  wrapper: "client/wrapper.blade.php"
+  components: ""
+
+data:
+  directory: ""
+  public: "public"
+  console: ""
+
+requests:
+  views: ""
+  app: ""
+  routers:
+    application: "" 
+    client: ""
+    web: ""
+
+database:
+  migrations: "" 

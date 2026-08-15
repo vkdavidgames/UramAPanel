@@ -1,0 +1,37 @@
+info:
+  name: "Translations"
+  identifier: "translations"
+  description: "Translations for Pterodactyl using Blueprint!"
+  flags: ""
+  version: "0.6"
+  target: "beta-2026-01"
+  author: "Euphoria Development"
+  icon: "logo.png"
+  website: "https://euphoriadevelopment.uk"
+
+admin:
+  view: "admin/view.blade.php"
+  controller: "admin/Controller.php"
+  css: ""
+  wrapper: ""
+
+dashboard:
+  css: ""
+  wrapper: "client/wrapper.blade.php"
+  components: ""
+
+data:
+  directory: ""
+  public: "public"
+  console: ""
+
+requests:
+  views: "src/views"
+  controllers: ""
+  routers:
+    application: ""
+    client: ""
+    web: "routes/web.php"
+
+database:
+  migrations: "database"

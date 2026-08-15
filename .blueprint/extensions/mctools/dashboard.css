@@ -1,0 +1,18 @@
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css?mctools");
+
+@font-face {
+    font-family: "Monocraft"; 
+    src: local("Monocraft"), url("https://online-fonts.com/sites/default/files/2024-08/Monocraft.otf") format("opentype");
+}
+
+.font-minecraft {
+    font-family: "Monocraft";
+}
+
+.code {
+    font-family: "Monocraft";
+    background-color: rgb(54, 54, 54);
+    padding: 2px;
+    font-size: 70%;
+    border-radius: 5px;
+}
