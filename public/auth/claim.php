@@ -12,10 +12,10 @@ if (file_exists($env_file)) {
         $_ENV[trim($name)] = trim($value, " '\"");
     }
 }
-$db_host = $_ENV['DB_HOST'] ?? '127.0.0.1';
-$db_user = $_ENV['DB_USERNAME'] ?? 'pterodactyl';
-$db_pass = $_ENV['DB_PASSWORD'] ?? '';
-$db_name = $_ENV['DB_DATABASE'] ?? 'panel';
+$db_host = $_ENV['DB_HOST'];
+$db_user = $_ENV['DB_USERNAME'];
+$db_pass = $_ENV['DB_PASSWORD'];
+$db_name = $_ENV['DB_DATABASE'];
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 ?>
