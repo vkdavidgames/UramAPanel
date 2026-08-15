@@ -25,7 +25,7 @@ $logged_username = "admin";
 
 if (isset($_COOKIE['pterodactyl_session'])) {
     // Kikeressük a legfrissebb aktív session-t, amihez tartozik érvényes felhasználó
-    $res = $conn->query("SELECT user_id FROM sessions WHERE id = '" . $conn->real_escape_match($_COOKIE['pterodactyl_session']) . "' LIMIT 1");
+    $res = $conn->query("SELECT user_id FROM sessions WHERE id = '" . $conn->real_escape_string($_COOKIE['pterodactyl_session']) . "' LIMIT 1");
     if ($res && $row = $res->fetch_assoc()) {
         $u_id = intval($row['user_id']);
         if ($u_id > 0) {
