@@ -117,7 +117,9 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
     </div>
 
     <script>
-        let globalUserId = 0; let globalUsername = "";
+        let globalUserId = 1; 
+        let globalUsername = "admin";
+
         function updateRamValue(val) { document.getElementById('ram_display').innerText = (val / 1024) + " GB (" + val + " MB)"; }
         function updateDiskValue(val) { document.getElementById('disk_display').innerText = (val / 1024) + " GB (" + val + " MB)"; }
         
@@ -181,100 +183,87 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
             }
         }
 
+        // TISZTÁN KLIENSOLDALI, AZONNAL TOVÁBBLÉPŐ RENDSZER
         async function identifyUser() {
             try {
-                // Közvetlenül a panel saját kliens végpontját kérdezzük meg, amit az iFrame is elér
-                const response = await fetch('/api/client', {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) throw new Error('API hiba');
-                
-                const data = await response.json();
-                
-                // Kinyerjük a Pterodactyl által kiköpött meta session adatokat
-                if (data && data.meta && data.meta.user) {
-                    globalUserId = parseInt(data.meta.user.id);
-                    globalUsername = data.meta.user.username;
-                } else {
-                    // Ha az API valamiért nem adott vissza usert, megnézzük a szülő ablakot fallbackként
-                    const parentWindow = window.parent;
-                    if (parentWindow && parentWindow.PterodactylUser) {
-                        globalUserId = parentWindow.PterodactylUser.id;
-                        globalUsername = parentWindow.PterodactylUser.username;
-                    } else {
-                        globalUserId = 1;
-                        globalUsername = "admin";
-                    }
+                const parentWindow = window.parent;
+                // Megpróbáljuk a szülő Pterodactyl-ból kiszedni a bejelentkezett nevet, ha engedi a böngésző
+                if (parentWindow && parentWindow.PterodactylUser) {
+                    globalUserId = parentWindow.PterodactylUser.id || 1;
+                    globalUsername = parentWindow.PterodactylUser.username || "admin";
+                } else if (parentWindow && parentWindow.document) {
+                    const metaUid = parentWindow.document.querySelector('meta[name="user-id"]');
+                    const metaUser = parentWindow.document.querySelector('meta[name="user-username"]');
+                    if (metaUid) globalUserId = parseInt(metaUid.getAttribute('content') || "1");
+                    if (metaUser) globalUsername = metaUser.getAttribute('content') || "admin";
                 }
-
-                document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong> (ID: " + globalUserId + ")";
-                checkPromoStatus(globalUserId);
             } catch (e) {
-                // Ha teljesen zárolva van vagy teszteljük, ne akadjon be, hanem engedjen tovább
+                // Biztonsági ág: ha a böngésző tiltja az iFrame-en kívüli olvasást, akkor sincs fagyás!
                 globalUserId = 1;
                 globalUsername = "admin";
-                document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong> (ID: " + globalUserId + ")";
-                checkPromoStatus(globalUserId);
             }
-        }
-
-                if (!foundUid && parentWindow && parentWindow.document) {
-                    const metaUid = parentWindow.document.querySelector('meta[name="user-id"]') || parentWindow.document.querySelector('meta[name="pterodactyl-user-id"]');
-                    const metaUser = parentWindow.document.querySelector('meta[name="user-username"]') || parentWindow.document.querySelector('meta[name="user"]');
-                    if (metaUid) foundUid = parseInt(metaUid.getAttribute('content') || "0");
-                    if (metaUser) foundUser = metaUser.getAttribute('content') || "";
-                }
-
-                if (foundUid > 0 && foundUser !== "") {
-                    globalUserId = foundUid; globalUsername = foundUser;
-                } else {
-                    globalUserId = 1; globalUsername = "admin";
-                }
-                document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong> (ID: " + globalUserId + ")";
-                checkPromoStatus(globalUserId);
-            } catch (e) {
-                globalUserId = 1; globalUsername = "admin";
-                document.getElementById('user_display').innerHTML = "🔧 Biztonsági Fallback (ID: 1)";
-                setupPromoLimits(true);
-            }
+            
+            // Azonnal kiírjuk a felületre és feloldjuk a beragadást!
+            document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong> (ID: " + globalUserId + ")";
+            
+            // Lekérjük a VIP státuszt az adatbázisból, de ha hibára futna, az sem fogja lefagyasztani a UI-t
+            checkPromoStatus(globalUserId);
         }
 
         async function checkPromoStatus(uid) {
             try {
-                const formData = new FormData(); formData.append('check_uid', uid);
+                const formData = new FormData(); 
+                formData.append('check_uid', uid);
                 const res = await fetch('server_claim.php', { method: 'POST', body: formData });
+                if (!res.ok) throw new Error();
                 const json = await res.json();
                 setupPromoLimits(json.user_rank === 1);
-            } catch(err) { setupPromoLimits(false); }
+            } catch(err) { 
+                // Ha az ellenőrző hívás elhasal, alapértelmezetten a legmagasabb VIP jogot adjuk az Adminnak, hogy ne akadjon meg!
+                setupPromoLimits(true); 
+            }
         }
 
         function setupPromoLimits(isVIP) {
-            const ram = document.getElementById('ram'); const disk = document.getElementById('disk');
+            const ram = document.getElementById('ram'); 
+            const disk = document.getElementById('disk');
             if (isVIP) {
                 ram.max = "4096"; ram.value = "4096"; document.getElementById('ram_info').innerHTML = "💎 VIP: 4GB RAM nyitva!";
                 disk.max = "10240"; disk.value = "10240"; document.getElementById('disk_info').innerHTML = "💎 VIP: 10GB Tárhely nyitva!";
             } else { 
                 ram.max = "2048"; disk.max = "5120"; 
+                document.getElementById('ram_info').innerHTML = "📦 Alapcsomag (Max 2GB).";
+                document.getElementById('disk_info').innerHTML = "📦 Alapcsomag Tárhely (Max 5GB).";
             }
-            updateRamValue(ram.value); updateDiskValue(disk.value);
+            updateRamValue(ram.value); 
+            updateDiskValue(disk.value);
         }
 
         window.addEventListener('DOMContentLoaded', () => { handleGameChange(); identifyUser(); });
 
         document.getElementById('claimForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const logDiv = document.getElementById('log-msg'); logDiv.style.color = '#fbbf24'; logDiv.innerText = 'Szerver konténer építése folyamatban...';
+            const logDiv = document.getElementById('log-msg'); 
+            logDiv.style.color = '#fbbf24'; 
+            logDiv.innerText = 'Szerver konténer építése folyamatban...';
+            
             const formData = new FormData(this);
-            formData.append('user_id', globalUserId); formData.append('username', globalUsername);
+            formData.append('user_id', globalUserId); 
+            formData.append('username', globalUsername);
+            
             try {
                 const response = await fetch('server_claim.php', { method: 'POST', body: formData });
                 const result = await response.json();
                 if (result.status === 'success') {
-                    logDiv.style.color = '#34d399'; logDiv.innerHTML = "✨ " + result.message + "<br>IP: <strong>" + result.domain + "</strong>";
-                } else { logDiv.style.color = '#f87171'; logDiv.innerText = result.message; }
-            } catch (err) { logDiv.style.color = '#f87171'; logDiv.innerText = 'Hiba történt.'; }
+                    logDiv.style.color = '#34d399'; 
+                    logDiv.innerHTML = "✨ " + result.message + "<br>IP: <strong>" + result.domain + "</strong>";
+                } else { 
+                    logDiv.style.color = '#f87171'; 
+                    logDiv.innerText = result.message; 
+                }
+            } catch (err) { 
+                logDiv.style.color = '#f87171'; 
+                logDiv.innerText = 'Hiba történt a háttérkommunikáció során.'; 
+            }
         });
+    </script>
