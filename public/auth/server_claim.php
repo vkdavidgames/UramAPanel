@@ -95,31 +95,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if ($selected_node === 0) { $selected_node = 1; }
 
-    // PORT KIOSZTÁS
+    // PORT KIOSZTÁS ÉS BELSŐ ALLOCATION ID LEKÉRDEZÉS (JAVÍTVA AZ API SZABVÁNYHOZ)
     $assigned_port = 0;
+    $allocation_id = 0; // Ez az, amit a Pterodactyl API megkövetel!
+
     if ($allocation_type === 'full') {
         $assigned_port = 25565;
+        
+        // Ellenőrizzük, hogy a mi egyedi nyilvántartásunk szerint szabad-e
         $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = 25565 AND node_id = ?");
         $stmt->bind_param("i", $selected_node); $stmt->execute(); $stmt->store_result();
         if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "A 25565 főport ezen a Node-on már foglalt!"])); }
         $stmt->close();
+        
+        // Lekérjük a Pterodactyl gyári táblájából a port belső egyedi azonosítóját (id)
+        $stmt = $conn->prepare("SELECT id FROM allocations WHERE node_id = ? AND port = 25565 LIMIT 1");
+        $stmt->bind_param("i", $selected_node); $stmt->execute(); $stmt->bind_result($alloc_id); $stmt->fetch(); $stmt->close();
+        
+        if (!$alloc_id) { die(json_encode(["status" => "error", "message" => "A 25565 port nincs hozzáadva a kiválasztott Node-hoz a panelen!"])); }
+        $allocation_id = intval($alloc_id);
     } else {
         if ($custom_port >= 25565 && $custom_port <= 26000) {
             $assigned_port = $custom_port;
+            
             $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = ? AND node_id = ?");
             $stmt->bind_param("ii", $assigned_port, $selected_node); $stmt->execute(); $stmt->store_result();
             if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "A kért egyedi port ezen a Node-on foglalt!"])); }
             $stmt->close();
+            
+            $stmt = $conn->prepare("SELECT id FROM allocations WHERE node_id = ? AND port = ? LIMIT 1");
+            $stmt->bind_param("ii", $selected_node, $assigned_port); $stmt->execute(); $stmt->bind_result($alloc_id); $stmt->fetch(); $stmt->close();
+            
+            if (!$alloc_id) { die(json_encode(["status" => "error", "message" => "A(z) " . $assigned_port . " port nincs hozzáadva a kiválasztott Node-hoz a panelen!"])); }
+            $allocation_id = intval($alloc_id);
         } else {
-            $assigned_port = 25566;
-            while (true) {
-                $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = ? AND node_id = ?");
-                $stmt->bind_param("ii", $assigned_port, $selected_node); $stmt->execute(); $stmt->store_result();
-                if ($stmt->num_rows === 0) { $stmt->close(); break; }
-                $stmt->close(); $assigned_port++;
-            }
+            // Dinamikus port keresés a panel szabad allocation-jei közül
+            // Olyan portot keresünk, ami be van regisztrálva a gyári allocations táblába, de a mi allocated_domains táblánkban még nincs benne
+            $stmt = $conn->prepare("
+                SELECT a.id, a.port 
+                FROM allocations as a 
+                WHERE a.node_id = ? AND a.port >= 25566 AND a.port <= 26000 
+                AND a.id NOT IN (SELECT id FROM allocated_domains WHERE node_id = ?)
+                LIMIT 1
+            ");
+            $stmt->bind_param("ii", $selected_node, $selected_node); $stmt->execute(); $stmt->bind_result($alloc_id, $found_port); $stmt->fetch(); $stmt->close();
+            
+            if (!$alloc_id) { die(json_encode(["status" => "error", "message" => "Nincs elérhető, szabadon kiosztható port a Node-on! Tölts fel több Allocation-t!"])); }
+            $assigned_port = intval($found_port);
+            $allocation_id = intval($alloc_id);
         }
     }
+
+    // MOST ÁTÍRJUK AZ API PAYLOAD-OT, HOGY A PORT HELYETT A BELSŐ ID-T KÜLDJE BE
+    // Keresd meg a $serverData tömbben az "allocation" -> "default" részt, és cseréld ki erre a változóra:
+    // "allocation" => ["default" => $allocation_id]
+
     $egg_id = 1; $startup_cmd = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JAR_FILE}}";
     if ($type === 'modded') { $egg_id = ($loader === 'neoforge') ? 15 : 2; }
     elseif ($type === 'plugins') { $egg_id = ($loader === 'purpur') ? 16 : 1; }
