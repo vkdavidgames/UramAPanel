@@ -70,11 +70,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "Már van aktív szervered!"])); }
     $stmt->close();
 
-    // GEOROUTING AUTOMATIZÁCIÓ NODE 1 és NODE 2 KÖZÖTT
+    // GEOROUTING AUTOMATIZÁCIÓ NODE 1 és NODE 2 KÖZÖTT (GOLYÓÁLLÓSÍTVA)
     $selected_node = 1;
-    $stmt = $conn->prepare("SELECT node_id, COUNT(*) as cnt FROM (SELECT 1 as node_id UNION SELECT 2 as node_id) as n LEFT JOIN allocated_domains ON n.node_id = allocated_domains.node_id GROUP BY n.node_id ORDER BY cnt ASC LIMIT 1");
-    $stmt->execute(); $stmt->bind_result($best_node, $count); $stmt->fetch(); $stmt->close();
-    if($best_node > 0) { $selected_node = $best_node; }
+    $stmt = $conn->prepare("SELECT node_id FROM (SELECT 1 as node_id UNION SELECT 2 as node_id) as n ORDER BY (SELECT COUNT(*) FROM allocated_domains WHERE allocated_domains.node_id = n.node_id) ASC LIMIT 1");
+    if ($stmt) {
+        $stmt->execute();
+        $stmt->bind_result($best_node);
+        if ($stmt->fetch()) {
+            $selected_node = intval($best_node);
+        }
+        $stmt->close();
+    }
+    if ($selected_node === 0) { $selected_node = 1; }
 
     // PORT KIOSZTÁS
     $assigned_port = 0;
