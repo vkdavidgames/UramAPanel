@@ -49,22 +49,25 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
         <form id="claimForm">
             <div class="form-group">
                 <label for="game">Válassz Játékot</label>
-                <select id="game" name="game"><option value="minecraft">Minecraft (Java Edition)</option></select>
+                <select id="game" name="game" onchange="handleGameChange()">
+                    <option value="minecraft" selected>Minecraft (Java Edition)</option>
+                    <option value="bedrock">Minecraft (Bedrock Edition)</option>
+                </select>
             </div>
-            <div class="form-group">
+            <div class="form-group" id="server_type_container">
                 <label for="server_type">Szerver Típusa</label>
                 <select id="server_type" name="server_type" onchange="toggleLoader()">
                     <option value="vanilla">Minecraft Vanilla (Tiszta gyári)</option>
-                    <option value="modded">Modolt Minecraft (Forge / Fabric / NeoForge)</option>
-                    <option value="plugins">Pluginolt Minecraft (Paper / Purpur)</option>
-                    <option value="bungeecord">BungeeCord / Velocity Proxy</option>
+                    <option value="modded">Modolt Minecraft (Forge / Fabric / NeoForge / Quilt)</option>
+                    <option value="plugins">Pluginolt Minecraft (Paper / Purpur / Spigot)</option>
+                    <option value="bungeecord">Proxy hálózat (BungeeCord / Waterfall)</option>
                 </select>
             </div>
             <div id="loader_container" class="form-group" style="display: none;">
                 <label id="loader_title" for="loader">Szoftver Típusa</label>
                 <select id="loader" name="loader"><option value="none">Válassz típust...</option></select>
                 <div id="loader_ver_hide" style="margin-top: 10px !important;">
-                    <label for="loader_version">Mod Loader Verzió</label>
+                    <label for="loader_version">Szoftver / Loader Verzió</label>
                     <input type="text" id="loader_version" name="loader_version" value="latest">
                 </div>
             </div>
@@ -76,7 +79,7 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
                 <label for="allocation_type">Foglalás Típusa</label>
                 <select id="allocation_type" name="allocation_type" onchange="toggleAllocationFields()">
                     <option value="port" selected>Csak Port lefoglalása (Egyedi Port)</option>
-                    <option value="full">Teljes Aldomain lefoglalása (Alapértelmezett 25565 port) 🌍</option>
+                    <option value="full">Teljes Aldomain lefoglalása (Alapértelmezett főport) 🌍</option>
                 </select>
             </div>
             <div id="custom_port_container" class="form-group">
@@ -84,10 +87,10 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
                 <input type="text" id="custom_port" name="custom_port" placeholder="Hagyd üresen automatikus porthoz">
             </div>
             <div class="form-group">
-                <label for="mc_version">Minecraft Verzió</label>
+                <label for="mc_version">Játék Verzió</label>
                 <input type="text" id="mc_version" name="mc_version" value="1.21.1" required>
             </div>
-            <div class="form-group">
+            <div class="form-group" id="java_version_container">
                 <label for="java_version">Java Környezet</label>
                 <select id="java_version" name="java_version">
                     <option value="25">Java 25</option>
@@ -112,75 +115,105 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
         </form>
         <div id="log-msg"></div>
     </div>
+
     <script>
         let globalUserId = 0; let globalUsername = "";
         function updateRamValue(val) { document.getElementById('ram_display').innerText = (val / 1024) + " GB (" + val + " MB)"; }
         function updateDiskValue(val) { document.getElementById('disk_display').innerText = (val / 1024) + " GB (" + val + " MB)"; }
+        
+        function handleGameChange() {
+            const game = document.getElementById('game').value;
+            const serverTypeContainer = document.getElementById('server_type_container');
+            const javaContainer = document.getElementById('java_version_container');
+            const loaderContainer = document.getElementById('loader_container');
+            const versionInput = document.getElementById('mc_version');
+            const customPortInput = document.getElementById('custom_port');
+
+            if (game === 'bedrock') {
+                serverTypeContainer.style.display = 'none';
+                javaContainer.style.display = 'none';
+                loaderContainer.style.display = 'none';
+                versionInput.value = 'latest';
+                if(document.getElementById('allocation_type').value === 'full') {
+                    customPortInput.value = '19132';
+                }
+            } else {
+                serverTypeContainer.style.display = 'block';
+                javaContainer.style.display = 'block';
+                versionInput.value = '1.21.1';
+                toggleLoader();
+            }
+            toggleAllocationFields();
+        }
+
         function toggleAllocationFields() {
             const type = document.getElementById('allocation_type').value;
+            const game = document.getElementById('game').value;
             document.getElementById('custom_port_container').style.display = (type === 'full') ? 'none' : 'block';
-            if(type === 'full') document.getElementById('custom_port').value = '25565';
+            
+            if(type === 'full') {
+                document.getElementById('custom_port').value = (game === 'bedrock') ? '19132' : '25565';
+            } else {
+                document.getElementById('custom_port').value = '';
+            }
         }
+
         function toggleLoader() {
+            const game = document.getElementById('game').value;
+            if (game === 'bedrock') return;
+
             const type = document.getElementById('server_type').value;
             const container = document.getElementById('loader_container');
             const loaderSelect = document.getElementById('loader');
             const verHide = document.getElementById('loader_ver_hide');
+
             if (type === 'modded') {
                 container.style.display = 'block'; verHide.style.display = 'block';
-                loaderSelect.innerHTML = '<option value="neoforge">NeoForge</option><option value="forge">Forge</option><option value="fabric">Fabric</option>';
+                loaderSelect.innerHTML = '<option value="neoforge">NeoForge</option><option value="forge">Forge</option><option value="fabric">Fabric</option><option value="quilt">Quilt</option>';
             } else if (type === 'plugins') {
                 container.style.display = 'block'; verHide.style.display = 'none';
-                loaderSelect.innerHTML = '<option value="paper">Paper</option><option value="purpur">Purpur</option>';
-            } else { container.style.display = 'none'; }
+                loaderSelect.innerHTML = '<option value="paper">Paper</option><option value="purpur">Purpur</option><option value="spigot">Spigot</option>';
+            } else if (type === 'bungeecord') {
+                container.style.display = 'block'; verHide.style.display = 'none';
+                loaderSelect.innerHTML = '<option value="bungeecord">BungeeCord</option><option value="waterfall">Waterfall</option>';
+            } else { 
+                container.style.display = 'none'; 
+            }
         }
+
         async function identifyUser() {
             try {
                 const parentWindow = window.parent;
-                let foundUid = 0;
-                let foundUser = "";
+                let foundUid = 0; let foundUser = "";
 
-                // 1. MEGKÍSÉRLÜK A REACT EASY-PEASY ABSZOLÚT BELSŐ STORE-JÁBÓL KISZEDNI
                 if (parentWindow && parentWindow.store && parentWindow.store.getState) {
                     const state = parentWindow.store.getState();
                     if (state && state.user && state.user.data) {
-                        foundUid = state.user.data.id;
-                        foundUser = state.user.data.username;
+                        foundUid = state.user.data.id; foundUser = state.user.data.username;
                     }
                 }
 
-                // 2. HA NEM SIKERÜLT, ÁTKUTATJUK A PTERODACTYL GYÁRI KIADOTT META BLOKKJAIT
                 if (!foundUid && parentWindow && parentWindow.document) {
                     const metaUid = parentWindow.document.querySelector('meta[name="user-id"]') || parentWindow.document.querySelector('meta[name="pterodactyl-user-id"]');
                     const metaUser = parentWindow.document.querySelector('meta[name="user-username"]') || parentWindow.document.querySelector('meta[name="user"]');
-                    
-                    if (metaUid) {
-                        foundUid = parseInt(metaUid.getAttribute('content') || metaUid.getAttribute('value') || "0");
-                    }
-                    if (metaUser) {
-                        foundUser = metaUser.getAttribute('content') || metaUser.getAttribute('value') || "";
-                    }
+                    if (metaUid) foundUid = parseInt(metaUid.getAttribute('content') || "0");
+                    if (metaUser) foundUser = metaUser.getAttribute('content') || "";
                 }
 
-                // VALIDÁLÁS: HA SIKERÜLT ÉRVÉNYES ADATOT TALÁLNI
                 if (foundUid > 0 && foundUser !== "") {
-                    globalUserId = foundUid;
-                    globalUsername = foundUser;
+                    globalUserId = foundUid; globalUsername = foundUser;
                 } else {
-                    // Ha be vagy jelentkezve adminként, de a React elrejtette a sessiont, ne essen undefined-ra
-                    globalUserId = 1;
-                    globalUsername = "admin";
+                    globalUserId = 1; globalUsername = "admin";
                 }
-                
                 document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong> (ID: " + globalUserId + ")";
                 checkPromoStatus(globalUserId);
             } catch (e) {
-                globalUserId = 1;
-                globalUsername = "admin";
+                globalUserId = 1; globalUsername = "admin";
                 document.getElementById('user_display').innerHTML = "🔧 Biztonsági Fallback (ID: 1)";
                 setupPromoLimits(true);
             }
         }
+
         async function checkPromoStatus(uid) {
             try {
                 const formData = new FormData(); formData.append('check_uid', uid);
@@ -189,15 +222,19 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
                 setupPromoLimits(json.user_rank === 1);
             } catch(err) { setupPromoLimits(false); }
         }
+
         function setupPromoLimits(isVIP) {
             const ram = document.getElementById('ram'); const disk = document.getElementById('disk');
             if (isVIP) {
                 ram.max = "4096"; ram.value = "4096"; document.getElementById('ram_info').innerHTML = "💎 VIP: 4GB RAM nyitva!";
                 disk.max = "10240"; disk.value = "10240"; document.getElementById('disk_info').innerHTML = "💎 VIP: 10GB Tárhely nyitva!";
-            } else { ram.max = "2048"; disk.max = "5120"; }
+            } else { 
+                ram.max = "2048"; disk.max = "5120"; 
+            }
             updateRamValue(ram.value); updateDiskValue(disk.value);
         }
-        window.addEventListener('DOMContentLoaded', () => { toggleLoader(); toggleAllocationFields(); identifyUser(); });
+
+        window.addEventListener('DOMContentLoaded', () => { handleGameChange(); identifyUser(); });
 
         document.getElementById('claimForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -212,4 +249,3 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
                 } else { logDiv.style.color = '#f87171'; logDiv.innerText = result.message; }
             } catch (err) { logDiv.style.color = '#f87171'; logDiv.innerText = 'Hiba történt.'; }
         });
-    </script>
