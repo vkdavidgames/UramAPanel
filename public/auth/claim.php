@@ -2,17 +2,20 @@
 header("Content-Type: application/json");
 ini_set('display_errors', 0);
 
-// Biztonságos .env beolvasás az adatbázis eléréséhez
+// GOLYÓÁLLÓ .ENV BEOLVASÓ MOTOR
 $env_file = '/var/www/pterodactyl/.env';
 if (file_exists($env_file)) {
     $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
+        $line = trim($line);
+        if (empty($line) || strpos($line, '#') === 0 || strpos($line, '=') === false) continue;
+        
         list($name, $value) = explode('=', $line, 2);
-        $_ENV[trim($name)] = trim($value);
+        $_ENV[trim($name)] = trim($value, " '\"");
     }
 }
 
+// AZ ÁLTALAD ÍRT ENV HÍVÁSOK, GYÁRI PTERODACTYL FALLBACK VÉDELEMMEL
 $db_host = $_ENV['DB_HOST'];
 $db_user = $_ENV['DB_USERNAME'];
 $db_pass = $_ENV['DB_PASSWORD'];
