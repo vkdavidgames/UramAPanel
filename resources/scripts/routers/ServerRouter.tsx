@@ -14,16 +14,11 @@ import InstallListener from '@/components/server/InstallListener';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
 
-// EGYEDI COMPONENT IMPORTOK
+// EGYEDI RECOVERED COMPONENT IMPORTOK
 import ConfigEditor from '@/components/server/ConfigEditor';
 import ModsContainer from '@/components/server/ModsContainer';
 import ServerDesignEditor from '@/components/server/ServerDesignEditor';
 import PlayerManager from '@/components/server/PlayerManager';
-
-{/* import { NavigationLinks, NavigationRouter } from '@blueprint/extends/routers/ServerRouter';
-import BeforeSubNavigation from '@blueprint/components/Navigation/SubNavigation/BeforeSubNavigation';
-import AdditionalServerItems from '@blueprint/components/Navigation/SubNavigation/AdditionalServerItems';
-import AfterSubNavigation from '@blueprint/components/Navigation/SubNavigation/AfterSubNavigation'; */}
 
 export default () => {
     const match = useRouteMatch<{ id: string }>();
@@ -70,12 +65,11 @@ export default () => {
                 <>
                     <CSSTransition timeout={150} classNames={'fade'} appear in>
                         <SubNavigation id={'SubNavigation'}>
-                            <BeforeSubNavigation />
                             <div>
-                                <NavigationLinks />
-                                <AdditionalServerItems />
-                                
-                                {/* RECOVERED CUSTOM MENÜPONTOK */}
+                                {/* RECOVERED UTALÁSOK CSONT NÉLKÜL A GYÁRI NAVIGÁCIÓBAN */}
+                                <NavLink to={`/server/${match.params.id}`} exact>
+                                    Console
+                                </NavLink>
                                 <NavLink to={`/server/${match.params.id}/extensions`} exact>
                                     Extension Manager
                                 </NavLink>
@@ -96,14 +90,13 @@ export default () => {
                                     </a>
                                 )}
                             </div>
-                            <AfterSubNavigation />
                         </SubNavigation>
                     </CSSTransition>
                     <InstallListener />
                     <TransferListener />
                     <WebsocketHandler />
                     
-                    {/* BELSŐ ÚTVONALAK SZINKRONIZÁLÁSA */}
+                    {/* BELSŐ ÚTVONALAK REGISZTRÁCIÓJA */}
                     <RouterSwitch>
                         <Route path={`${match.path}/extensions`} exact>
                             <ModsContainer />
@@ -116,9 +109,6 @@ export default () => {
                         </Route>
                         <Route path={`${match.path}/players`} exact>
                             <PlayerManager />
-                        </Route>
-                        <Route path={match.path}>
-                            <NavigationRouter />
                         </Route>
                     </RouterSwitch>
                 </>
