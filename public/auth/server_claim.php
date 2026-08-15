@@ -118,9 +118,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $startup_cmd = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JAR_FILE}}";
     $api_environment = [
         "SERVER_JAR_FILE" => "server.jar",
+        "server.jar" => "server.jar",
+        "JAR_FILE" => "server.jar",
         "VANILLA_VERSION" => $mc_version,
         "MINECRAFT_VERSION" => $mc_version,
-        "SERVER_VERSION" => $mc_version
+        "SERVER_VERSION" => $mc_version,
+        "DL_VERSION" => $mc_version,
+        "version" => $mc_version
     ];
 
     if ($game === 'bedrock') {
