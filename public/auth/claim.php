@@ -136,17 +136,26 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
         }
         async function identifyUser() {
             try {
-                const siteConfig = window.parent.SiteConfiguration;
-                if (siteConfig && siteConfig.user) {
-                    globalUserId = siteConfig.user.id; globalUsername = siteConfig.user.username;
+                // Biztonságos, natív Pterodactyl API hívás az éppen bejelentkezett session lekéréséhez
+                const response = await fetch('/api/client');
+                if (!response.ok) throw new Error('Nem sikerült elérni a session-t.');
+                
+                const data = await response.json();
+                // A Pterodactyl API-ból kiszedjük az éles felhasználói adatokat
+                if (data && data.meta && data.meta.user) {
+                    globalUserId = data.meta.user.id;
+                    globalUsername = data.meta.user.username;
                 } else {
+                    // Ha az API struktúra eltér, megpróbáljuk a gyári meta tagot
                     const metaUser = window.parent.document.querySelector('meta[name="user-id"]');
                     globalUserId = metaUser ? parseInt(metaUser.getAttribute('content')) : 1;
                     globalUsername = metaUser ? metaUser.getAttribute('username') : "DavidAdmin";
                 }
+                
                 document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong>";
                 checkPromoStatus(globalUserId);
             } catch (e) {
+                // Ha még nincs bejelentkezve, vagy megszakadt a kapcsolat
                 globalUserId = 1; globalUsername = "DavidAdmin";
                 document.getElementById('user_display').innerHTML = "🔧 Teszt üzemmód (ID: 1)";
                 setupPromoLimits(true);
