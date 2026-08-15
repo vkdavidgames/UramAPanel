@@ -23,12 +23,10 @@ $db_name = $_ENV['DB_DATABASE'];
 $pterodactyl_url = $_ENV['APP_URL'];
 $pterodactyl_api_key = $_ENV['API_KEY_SERVER'];
 
-// CLOUDFLARE CONFIG
 $cf_email = $_ENV['CLOUDFLARE_EMAIL'];
 $cf_api_key = $_ENV['CLOUDFLARE_API_TOKEN'];
 $cf_zone_id = $_ENV['CLOUDFLARE_ZONE_ID'];
 
-// KAPCSOLÓDÁS A GYÁRI PANEL ADATBÁZISHOZ
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port);
 if ($conn->connect_error) { die(json_encode(["status" => "error", "message" => "Adatbázis hiba."])); }
 
@@ -64,60 +62,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user_rank !== 1 && $has_free_server !== 1) { die(json_encode(["status" => "error", "message" => "Nincs igénylési jogod!"])); }
 
-    // DUPLIKÁCIÓ ELLENŐRZÉS
     $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE pterodactyl_user_id = ?");
     $stmt->bind_param("i", $user_id); $stmt->execute(); $stmt->store_result();
     if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "Már van aktív szervered!"])); }
     $stmt->close();
 
-    // GEOROUTING AUTOMATIZÁCIÓ (KIZÁRVA A PRIVÁT ÉS KARBANTARTÁS ALATTI NODE-OKAT)
+    // GEOROUTING AUTOMATIZÁCIÓ (SZŰRVE)
     $selected_node = 1;
-    
-    // Az SQL lekérdezés összekapcsolja a gyári nodes táblát, és ellenőrzi a feltételeket
-    $stmt = $conn->prepare("
-        SELECT n.id 
-        FROM nodes as n 
-        WHERE n.maintenance_mode = 0 AND n.public = 1 
-        ORDER BY (SELECT COUNT(*) FROM allocated_domains WHERE allocated_domains.node_id = n.id) ASC 
-        LIMIT 1
-    ");
-    
+    $stmt = $conn->prepare("SELECT n.id FROM nodes as n WHERE n.maintenance_mode = 0 AND n.public = 1 ORDER BY (SELECT COUNT(*) FROM allocated_domains WHERE allocated_domains.node_id = n.id) ASC LIMIT 1");
     if ($stmt) {
-        $stmt->execute();
-        $stmt->bind_result($best_node);
-        if ($stmt->fetch()) {
-            $selected_node = intval($best_node);
-        } else {
-            // Biztonsági fallback: Ha véletlenül minden gép le van zárva, a fő Node-ra irányítunk
-            $selected_node = 1;
-        }
+        $stmt->execute(); $stmt->bind_result($best_node);
+        if ($stmt->fetch()) { $selected_node = intval($best_node); }
         $stmt->close();
     }
     if ($selected_node === 0) { $selected_node = 1; }
 
-    // PORT KIOSZTÁS ÉS BELSŐ ALLOCATION ID LEKÉRDEZÉS (JAVÍTVA AZ API SZABVÁNYHOZ)
-    $assigned_port = 0;
-    $allocation_id = 0; // Ez az, amit a Pterodactyl API megkövetel!
-
+    // PORT KIOSZTÁS ÉS BELSŐ ID LEKÉRDEZÉS
+    $assigned_port = 0; $allocation_id = 0;
     if ($allocation_type === 'full') {
-        $assigned_port = 25565;
-        
-        // Ellenőrizzük, hogy a mi egyedi nyilvántartásunk szerint szabad-e
-        $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = 25565 AND node_id = ?");
-        $stmt->bind_param("i", $selected_node); $stmt->execute(); $stmt->store_result();
-        if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "A 25565 főport ezen a Node-on már foglalt!"])); }
+        $assigned_port = ($game === 'bedrock') ? 19132 : 25565;
+        $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = ? AND node_id = ?");
+        $stmt->bind_param("ii", $assigned_port, $selected_node); $stmt->execute(); $stmt->store_result();
+        if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "A főport ezen a Node-on már foglalt!"])); }
         $stmt->close();
         
-        // Lekérjük a Pterodactyl gyári táblájából a port belső egyedi azonosítóját (id)
-        $stmt = $conn->prepare("SELECT id FROM allocations WHERE node_id = ? AND port = 25565 LIMIT 1");
-        $stmt->bind_param("i", $selected_node); $stmt->execute(); $stmt->bind_result($alloc_id); $stmt->fetch(); $stmt->close();
-        
-        if (!$alloc_id) { die(json_encode(["status" => "error", "message" => "A 25565 port nincs hozzáadva a kiválasztott Node-hoz a panelen!"])); }
+        $stmt = $conn->prepare("SELECT id FROM allocations WHERE node_id = ? AND port = ? LIMIT 1");
+        $stmt->bind_param("ii", $selected_node, $assigned_port); $stmt->execute(); $stmt->bind_result($alloc_id); $stmt->fetch(); $stmt->close();
+        if (!$alloc_id) { die(json_encode(["status" => "error", "message" => "A főport nincs hozzáadva a kiválasztott Node-hoz a panelen!"])); }
         $allocation_id = intval($alloc_id);
     } else {
         if ($custom_port >= 25565 && $custom_port <= 26000) {
             $assigned_port = $custom_port;
-            
             $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = ? AND node_id = ?");
             $stmt->bind_param("ii", $assigned_port, $selected_node); $stmt->execute(); $stmt->store_result();
             if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "A kért egyedi port ezen a Node-on foglalt!"])); }
@@ -125,54 +100,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $stmt = $conn->prepare("SELECT id FROM allocations WHERE node_id = ? AND port = ? LIMIT 1");
             $stmt->bind_param("ii", $selected_node, $assigned_port); $stmt->execute(); $stmt->bind_result($alloc_id); $stmt->fetch(); $stmt->close();
-            
-            if (!$alloc_id) { die(json_encode(["status" => "error", "message" => "A(z) " . $assigned_port . " port nincs hozzáadva a kiválasztott Node-hoz a panelen!"])); }
+            if (!$alloc_id) { die(json_encode(["status" => "error", "message" => "A kért port nincs hozzáadva a kiválasztott Node-hoz a panelen!"])); }
             $allocation_id = intval($alloc_id);
         } else {
-            // Dinamikus port keresés a panel szabad allocation-jei közül
-            // Olyan portot keresünk, ami be van regisztrálva a gyári allocations táblába, de a mi allocated_domains táblánkban még nincs benne
-            $stmt = $conn->prepare("
-                SELECT a.id, a.port 
-                FROM allocations as a 
-                WHERE a.node_id = ? AND a.port >= 25566 AND a.port <= 26000 
-                AND a.id NOT IN (SELECT id FROM allocated_domains WHERE node_id = ?)
-                LIMIT 1
-            ");
-            $stmt->bind_param("ii", $selected_node, $selected_node); $stmt->execute(); $stmt->bind_result($alloc_id, $found_port); $stmt->fetch(); $stmt->close();
-            
-            if (!$alloc_id) { die(json_encode(["status" => "error", "message" => "Nincs elérhető, szabadon kiosztható port a Node-on! Tölts fel több Allocation-t!"])); }
-            $assigned_port = intval($found_port);
-            $allocation_id = intval($alloc_id);
+            $min_p = ($game === 'bedrock') ? 19133 : 25566;
+            $max_p = ($game === 'bedrock') ? 19500 : 26000;
+            $stmt = $conn->prepare("SELECT a.id, a.port FROM allocations as a WHERE a.node_id = ? AND a.port >= ? AND a.port <= ? AND a.id NOT IN (SELECT id FROM allocated_domains WHERE node_id = ?) LIMIT 1");
+            $stmt->bind_param("iiii", $selected_node, $min_p, $max_p, $selected_node); $stmt->execute(); $stmt->bind_result($alloc_id, $found_port); $stmt->fetch(); $stmt->close();
+            if (!$alloc_id) { die(json_encode(["status" => "error", "message" => "Nincs szabadon kiosztható port ezen a Node-on!"])); }
+            $assigned_port = intval($found_port); $allocation_id = intval($alloc_id);
         }
     }
 
-    // MOST ÁTÍRJUK AZ API PAYLOAD-OT, HOGY A PORT HELYETT A BELSŐ ID-T KÜLDJE BE
-    // Keresd meg a $serverData tömbben az "allocation" -> "default" részt, és cseréld ki erre a változóra:
-    // "allocation" => ["default" => $allocation_id]
+    // DINAMIKUS FÉSZEK (EGG) ÉS INDÍTÁSI PARANCS MEGHATÁROZÁS
+    $nest_id = 1; // Minecraft gyári Nest ID
+    $egg_id = 1;  // Alapértelmezett Vanilla
+    $startup_cmd = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JAR_FILE}}";
+    $api_environment = [
+        "SERVER_JAR_FILE" => "server.jar",
+        "VANILLA_VERSION" => $mc_version,
+        "MINECRAFT_VERSION" => $mc_version,
+        "SERVER_VERSION" => $mc_version
+    ];
 
-    $egg_id = 1; $startup_cmd = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JAR_FILE}}";
-    if ($type === 'modded') { $egg_id = ($loader === 'neoforge') ? 15 : 2; }
-    elseif ($type === 'plugins') { $egg_id = ($loader === 'purpur') ? 16 : 1; }
-    elseif ($type === 'bungeecord') { $egg_id = 3; $docker_image = "ghcr.io/pterodactyl/yolks:java_11"; }
+    if ($game === 'bedrock') {
+        $nest_id = 2; // Tegyük fel, hogy a Bedrock a 2-es Nestben van (vagy állítsd át a pontosra!)
+        $egg_id = 10; // Cseréld ki a te pontos Bedrock Egg ID-dra!
+        $startup_cmd = "./bedrock_server";
+        $api_environment = ["BEDROCK_VERSION" => $mc_version, "LD_LIBRARY_PATH" => "."];
+    } else {
+        if ($type === 'modded') {
+            if ($loader === 'forge') { $egg_id = 3; }
+            elseif ($loader === 'fabric') { $egg_id = 18; $api_environment["FABRIC_VERSION"] = $loader_version; }
+            elseif ($loader === 'quilt') { $egg_id = 21; $api_environment["QUILT_VERSION"] = $loader_version; }
+            else { $egg_id = 16; $api_environment["NEOFORGE_VERSION"] = $loader_version; }
+        } elseif ($type === 'plugins') {
+            if ($loader === 'purpur') { $egg_id = 17; $api_environment["PURPUR_VERSION"] = $loader_version; }
+            elseif ($loader === 'spigot') { $egg_id = 20; $api_environment["SPIGOT_VERSION"] = $loader_version; }
+            else { $egg_id = 2; $api_environment["PAPER_VERSION"] = $loader_version; }
+        } elseif ($type === 'bungeecord') {
+            if ($loader === 'waterfall') { $egg_id = 19; }
+            else { $egg_id = 4; }
+            $startup_cmd = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JAR_FILE}}";
+        }
+    }
 
     $docker_image = "ghcr.io/pterodactyl/yolks:java_" . $java_version;
+    if ($game === 'bedrock') { $docker_image = "ghcr.io/pterodactyl/yolks:debian"; }
 
-    // PTERODACTYL API HÍVÁS
     $serverData = [
-        "name" => $username . " - " . $clean_subdomain, "user" => $user_id, "nest" => 1, "egg" => $egg_id, "node" => $selected_node,
+        "name" => $username . " - " . $clean_subdomain, "user" => $user_id, "nest" => $nest_id, "egg" => $egg_id, "node" => $selected_node,
         "docker_image" => $docker_image, "startup" => $startup_cmd,
         "limits" => ["memory" => $requested_ram, "swap" => 0, "disk" => $requested_disk, "io" => 500, "cpu" => 100],
-                "environment" => [
-            "SERVER_JAR_FILE" => "server.jar",
-            "server.jar" => "server.jar",
-            "VANILLA_VERSION" => $mc_version,
-            "MINECRAFT_VERSION" => $mc_version,
-            "SERVER_VERSION" => $mc_version,
-            "version" => $mc_version,
-            "MOD_VERSION" => $loader_version,
-            "FABRIC_VERSION" => $loader_version
-        ],
-        "feature_limits" => ["databases" => 1, "allocations" => 5, "backups" => 3], "allocation" => ["default" => $allocation_id]
+        "environment" => $api_environment,
+        "feature_limits" => ["databases" => 0, "allocations" => 1, "backups" => 1], "allocation" => ["default" => $allocation_id]
     ];
 
     $ch = curl_init($pterodactyl_url . "/api/application/servers");
@@ -185,7 +166,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($http_code === 201 && isset($responseData['attributes']['id'])) {
         $server_uuid = $responseData['attributes']['uuid'];
 
-        // MENTÉS A GYÁRI ADATBÁZISBA
         $stmt = $conn->prepare("INSERT INTO allocated_domains (pterodactyl_user_id, pterodactyl_server_id, subdomain, port, allocation_type, node_id) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("issisi", $user_id, $server_uuid, $clean_subdomain, $assigned_port, $allocation_type, $selected_node);
         $stmt->execute(); $stmt->close();
@@ -195,7 +175,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($allocation_type === 'full') {
             $dns_payload = ["type" => "CNAME", "name" => $clean_subdomain . ".davidgames.uk", "content" => $target_host, "ttl" => 1, "proxied" => false];
         } else {
-            $dns_payload = ["type" => "SRV", "name" => "_minecraft._tcp." . $clean_subdomain . ".davidgames.uk", "data" => ["service" => "_minecraft", "proto" => "_tcp", "name" => $clean_subdomain, "priority" => 0, "weight" => 5, "port" => $assigned_port, "target" => $target_host], "ttl" => 1, "proxied" => false];
+            if ($game === 'bedrock') {
+                $dns_payload = ["type" => "CNAME", "name" => $clean_subdomain . ".davidgames.uk", "content" => $target_host, "ttl" => 1, "proxied" => false];
+            } else {
+                $dns_payload = ["type" => "SRV", "name" => "_minecraft._tcp." . $clean_subdomain . ".davidgames.uk", "data" => ["service" => "_minecraft", "proto" => "_tcp", "name" => $clean_subdomain, "priority" => 0, "weight" => 5, "port" => $assigned_port, "target" => $target_host], "ttl" => 1, "proxied" => false];
+            }
         }
 
         $cf_ch = curl_init("https://cloudflare.com" . $cf_zone_id . "/dns_records");
@@ -204,19 +188,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         curl_setopt($cf_ch, CURLOPT_HTTPHEADER, ["X-Auth-Email: " . $cf_email, "X-Auth-Key: " . $cf_api_key, "Content-Type: application/json"]);
         curl_exec($cf_ch); curl_close($cf_ch);
 
-        $final_ip = ($allocation_type === 'full') ? $clean_subdomain . ".davidgames.uk" : $clean_subdomain . ".davidgames.uk:" . $assigned_port;
+        $final_ip = ($allocation_type === 'full' || $game === 'bedrock') ? $clean_subdomain . ".davidgames.uk" : $clean_subdomain . ".davidgames.uk:" . $assigned_port;
         echo json_encode(["status" => "success", "message" => "Szerver sikeresen létrehozva!", "domain" => $final_ip]);
     } else {
-        // Kiolvassuk a Pterodactyl API által küldött pontos hibaüzenetet
         if (isset($responseData['errors'])) {
             $err_messages = [];
-            foreach ($responseData['errors'] as $err) {
-                $err_messages[] = ($err['source']['field'] ?? 'General') . ': ' . ($err['detail'] ?? 'Ismeretlen hiba');
-            }
+            foreach ($responseData['errors'] as $err) { $err_messages[] = ($err['source']['field'] ?? 'General') . ': ' . ($err['detail'] ?? 'Hiba'); }
             $details = implode(' | ', $err_messages);
-        } else {
-            $details = "HTTP Kód: " . $http_code . " - Nincs válasz az API-tól.";
-        }
+        } else { $details = "HTTP " . $http_code; }
         echo json_encode(["status" => "error", "message" => "Hiba történt: " . $details]);
     }
     exit();
