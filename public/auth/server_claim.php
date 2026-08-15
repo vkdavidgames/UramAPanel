@@ -70,14 +70,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "Már van aktív szervered!"])); }
     $stmt->close();
 
-    // GEOROUTING AUTOMATIZÁCIÓ NODE 1 és NODE 2 KÖZÖTT (GOLYÓÁLLÓSÍTVA)
+    // GEOROUTING AUTOMATIZÁCIÓ (KIZÁRVA A PRIVÁT ÉS KARBANTARTÁS ALATTI NODE-OKAT)
     $selected_node = 1;
-    $stmt = $conn->prepare("SELECT node_id FROM (SELECT 1 as node_id UNION SELECT 2 as node_id) as n ORDER BY (SELECT COUNT(*) FROM allocated_domains WHERE allocated_domains.node_id = n.node_id) ASC LIMIT 1");
+    
+    // Az SQL lekérdezés összekapcsolja a gyári nodes táblát, és ellenőrzi a feltételeket
+    $stmt = $conn->prepare("
+        SELECT n.id 
+        FROM nodes as n 
+        WHERE n.maintenance_mode = 0 AND n.public = 1 
+        ORDER BY (SELECT COUNT(*) FROM allocated_domains WHERE allocated_domains.node_id = n.id) ASC 
+        LIMIT 1
+    ");
+    
     if ($stmt) {
         $stmt->execute();
         $stmt->bind_result($best_node);
         if ($stmt->fetch()) {
             $selected_node = intval($best_node);
+        } else {
+            // Biztonsági fallback: Ha véletlenül minden gép le van zárva, a fő Node-ra irányítunk
+            $selected_node = 1;
         }
         $stmt->close();
     }
