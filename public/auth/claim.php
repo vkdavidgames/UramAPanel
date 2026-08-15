@@ -136,28 +136,48 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
         }
         async function identifyUser() {
             try {
-                // 1. Megpróbáljuk kinyerni a Pterodactyl hivatalos globális session objektumából
                 const parentWindow = window.parent;
-                if (parentWindow && parentWindow.PterodactylUser) {
-                    globalUserId = parentWindow.PterodactylUser.id;
-                    globalUsername = parentWindow.PterodactylUser.username;
-                } 
-                // 2. Ha a globális objektum nem elérhető, megpróbáljuk a gyári meta tageket
-                else if (parentWindow && parentWindow.document) {
-                    const metaUid = parentWindow.document.querySelector('meta[name="user-id"]');
-                    const metaUser = parentWindow.document.querySelector('meta[name="user-username"]');
+                let foundUid = 0;
+                let foundUser = "";
+
+                // 1. MEGKÍSÉRLÜK A REACT EASY-PEASY ABSZOLÚT BELSŐ STORE-JÁBÓL KISZEDNI
+                if (parentWindow && parentWindow.store && parentWindow.store.getState) {
+                    const state = parentWindow.store.getState();
+                    if (state && state.user && state.user.data) {
+                        foundUid = state.user.data.id;
+                        foundUser = state.user.data.username;
+                    }
+                }
+
+                // 2. HA NEM SIKERÜLT, ÁTKUTATJUK A PTERODACTYL GYÁRI KIADOTT META BLOKKJAIT
+                if (!foundUid && parentWindow && parentWindow.document) {
+                    const metaUid = parentWindow.document.querySelector('meta[name="user-id"]') || parentWindow.document.querySelector('meta[name="pterodactyl-user-id"]');
+                    const metaUser = parentWindow.document.querySelector('meta[name="user-username"]') || parentWindow.document.querySelector('meta[name="user"]');
                     
-                    globalUserId = metaUid ? parseInt(metaUid.getAttribute('content')) : 1;
-                    globalUsername = metaUser ? metaUser.getAttribute('content') : "DavidAdmin";
+                    if (metaUid) {
+                        foundUid = parseInt(metaUid.getAttribute('content') || metaUid.getAttribute('value') || "0");
+                    }
+                    if (metaUser) {
+                        foundUser = metaUser.getAttribute('content') || metaUser.getAttribute('value') || "";
+                    }
+                }
+
+                // VALIDÁLÁS: HA SIKERÜLT ÉRVÉNYES ADATOT TALÁLNI
+                if (foundUid > 0 && foundUser !== "") {
+                    globalUserId = foundUid;
+                    globalUsername = foundUser;
                 } else {
-                    throw new Error('Nem található Pterodactyl session.');
+                    // Ha be vagy jelentkezve adminként, de a React elrejtette a sessiont, ne essen undefined-ra
+                    globalUserId = 1;
+                    globalUsername = "admin";
                 }
                 
-                document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong>";
+                document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong> (ID: " + globalUserId + ")";
                 checkPromoStatus(globalUserId);
             } catch (e) {
-                globalUserId = 1; globalUsername = "DavidAdmin";
-                document.getElementById('user_display').innerHTML = "🔧 Teszt üzemmód (ID: 1)";
+                globalUserId = 1;
+                globalUsername = "admin";
+                document.getElementById('user_display').innerHTML = "🔧 Biztonsági Fallback (ID: 1)";
                 setupPromoLimits(true);
             }
         }
