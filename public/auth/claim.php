@@ -36,6 +36,7 @@ if (isset($_POST['check_uid'])) {
     echo json_encode(["has_promo" => intval($h_free), "user_rank" => intval($u_rank)]);
     exit();
 }
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = intval($_POST['user_id'] ?? 0);
     $username = trim($_POST['username'] ?? '');
@@ -68,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // GEOROUTING AUTOMATIZÁCIÓ NODE 1 és NODE 2 KÖZÖTT
     $selected_node = 1;
-    $stmt = $conn->prepare("SELECT node_id, COUNT(*) as cnt FROM (SELECT 1 as node_id UNION SELECT 2 as node_id) as n LEFT JOIN allocated_domains ON 1=1 GROUP BY node_id ORDER BY cnt ASC LIMIT 1");
+    $stmt = $conn->prepare("SELECT node_id, COUNT(*) as cnt FROM (SELECT 1 as node_id UNION SELECT 2 as node_id) as n LEFT JOIN allocated_domains ON n.node_id = allocated_domains.node_id GROUP BY n.node_id ORDER BY cnt ASC LIMIT 1");
     $stmt->execute(); $stmt->bind_result($best_node, $count); $stmt->fetch(); $stmt->close();
     if($best_node > 0) { $selected_node = $best_node; }
 
@@ -128,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("issisi", $user_id, $server_uuid, $clean_subdomain, $assigned_port, $allocation_type, $selected_node);
         $stmt->execute(); $stmt->close();
 
-        // CLOUDFLARE DNS GENERÁLÁS V4
+        // CLOUDFLARE DNS GENERÁLÁS V4 (JAVÍTVA)
         $target_host = ($selected_node === 2) ? "node2.davidgames.uk" : "uramapanel.davidgames.uk";
         if ($allocation_type === 'full') {
             $dns_payload = ["type" => "CNAME", "name" => $clean_subdomain . ".davidgames.uk", "content" => $target_host, "ttl" => 1, "proxied" => false];
