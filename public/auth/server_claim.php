@@ -162,8 +162,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         "name" => $username . " - " . $clean_subdomain, "user" => $user_id, "nest" => 1, "egg" => $egg_id, "node" => $selected_node,
         "docker_image" => $docker_image, "startup" => $startup_cmd,
         "limits" => ["memory" => $requested_ram, "swap" => 0, "disk" => $requested_disk, "io" => 500, "cpu" => 100],
-        "environment" => ["SERVER_JAR_FILE" => "server.jar", "MINECRAFT_VERSION" => $mc_version, "MOD_VERSION" => $loader_version, "FABRIC_VERSION" => $loader_version],
-        "feature_limits" => ["databases" => 0, "allocations" => 1, "backups" => 1], "allocation" => ["default" => $allocation_id]
+                "environment" => [
+            "SERVER_JAR_FILE" => "server.jar",
+            "server.jar" => "server.jar",
+            "VANILLA_VERSION" => $mc_version,
+            "MINECRAFT_VERSION" => $mc_version,
+            "SERVER_VERSION" => $mc_version,
+            "version" => $mc_version,
+            "MOD_VERSION" => $loader_version,
+            "FABRIC_VERSION" => $loader_version
+        ],
+        "feature_limits" => ["databases" => 1, "allocations" => 5, "backups" => 3], "allocation" => ["default" => $allocation_id]
     ];
 
     $ch = curl_init($pterodactyl_url . "/api/application/servers");
