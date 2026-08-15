@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         "docker_image" => $docker_image, "startup" => $startup_cmd,
         "limits" => ["memory" => $requested_ram, "swap" => 0, "disk" => $requested_disk, "io" => 500, "cpu" => 100],
         "environment" => $api_environment,
-        "feature_limits" => ["databases" => 0, "allocations" => 1, "backups" => 1], "allocation" => ["default" => $allocation_id]
+        "feature_limits" => ["databases" => 1, "allocations" => 5, "backups" => 3], "allocation" => ["default" => $allocation_id]
     ];
 
     $ch = curl_init($pterodactyl_url . "/api/application/servers");
