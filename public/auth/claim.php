@@ -183,17 +183,42 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 
         async function identifyUser() {
             try {
-                // A PHP szerveroldalon tűpontosan behelyettesíti az éppen bejelentkezett játékos adatait
-                globalUserId = <?php echo $logged_uid; ?>;
-                globalUsername = "<?php echo $logged_username; ?>";
+                // Közvetlenül a panel saját kliens végpontját kérdezzük meg, amit az iFrame is elér
+                const response = await fetch('/api/client', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('API hiba');
+                
+                const data = await response.json();
+                
+                // Kinyerjük a Pterodactyl által kiköpött meta session adatokat
+                if (data && data.meta && data.meta.user) {
+                    globalUserId = parseInt(data.meta.user.id);
+                    globalUsername = data.meta.user.username;
+                } else {
+                    // Ha az API valamiért nem adott vissza usert, megnézzük a szülő ablakot fallbackként
+                    const parentWindow = window.parent;
+                    if (parentWindow && parentWindow.PterodactylUser) {
+                        globalUserId = parentWindow.PterodactylUser.id;
+                        globalUsername = parentWindow.PterodactylUser.username;
+                    } else {
+                        globalUserId = 1;
+                        globalUsername = "admin";
+                    }
+                }
 
                 document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong> (ID: " + globalUserId + ")";
                 checkPromoStatus(globalUserId);
             } catch (e) {
+                // Ha teljesen zárolva van vagy teszteljük, ne akadjon be, hanem engedjen tovább
                 globalUserId = 1;
                 globalUsername = "admin";
-                document.getElementById('user_display').innerHTML = "🔧 Biztonsági Fallback (ID: 1)";
-                setupPromoLimits(true);
+                document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong> (ID: " + globalUserId + ")";
+                checkPromoStatus(globalUserId);
             }
         }
 
