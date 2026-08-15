@@ -2,35 +2,40 @@
 header("Content-Type: application/json");
 ini_set('display_errors', 0);
 
-// FIX ADATBÁZIS ADATOK A GYÁRI PTERODACTYLHOZ
-$db_host = "127.0.0.1";
-$db_user = "pterodactyl";
-$db_pass = "4(gnJ\"IhAp]uw5d8>q.^yT|lk\"]W_tb\"da~EY#.<._\"62I`^v`mPCn}x*p[=()SP";
-$db_name = "panel";
-$custom_db_name = "cracked_auth";
+// Biztonságos .env beolvasás az adatbázis eléréséhez
+$env_file = '/var/www/pterodactyl/.env';
+if (file_exists($env_file)) {
+    $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        list($name, $value) = explode('=', $line, 2);
+        $_ENV[trim($name)] = trim($value);
+    }
+}
 
-$pterodactyl_url = "https://davidgames.uk";
-$pterodactyl_api_key = "ptla_geRgLj7ysmMyBG5e4nSgk18SMa9hyFT9T8LlrAXpcfZ";
+$db_host = $_ENV['DB_HOST'];
+$db_user = $_ENV['DB_USERNAME'];
+$db_pass = $_ENV['DB_PASSWORD'];
+$db_name = $_ENV['DB_DATABASE'];
+
+$pterodactyl_url = $_ENV['APP_URL'];
+$pterodactyl_api_key = $_ENV['API_KEY_SERVER'];
 
 // CLOUDFLARE CONFIG
-$cf_email = "vkdg0410@gmail.com"; 
-$cf_api_key = "904b73b5df5bdae61c5df6da2f85412356789"; 
-$cf_zone_id = "df059cf3b1e3e7f4112e4df8b5123456";    
+$cf_email = $_ENV['CLOUDFLARE_EMAIL'];
+$cf_api_key = $_ENV['CLOUDFLARE_API_TOKEN'];
+$cf_zone_id = $_ENV['CLOUDFLARE_ZONE_ID'];
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) { die(json_encode(["status" => "error", "message" => "Panel adatbázis hiba."])); }
-
-$custom_conn = new mysqli($db_host, $db_user, $db_pass, $custom_db_name);
-if ($custom_conn->connect_error) { die(json_encode(["status" => "error", "message" => "Egyedi adatbázis hiba."])); }
+if ($conn->connect_error) { die(json_encode(["status" => "error", "message" => "Adatbázis hiba."])); }
 
 if (isset($_POST['check_uid'])) {
     $c_uid = intval($_POST['check_uid']);
-    $stmt = $custom_conn->prepare("SELECT has_free_server, `rank` FROM users_security_meta WHERE pterodactyl_user_id = ?");
+    $stmt = $conn->prepare("SELECT has_free_server, `rank` FROM users_security_meta WHERE pterodactyl_user_id = ?");
     $stmt->bind_param("i", $c_uid); $stmt->execute(); $stmt->bind_result($h_free, $u_rank); $stmt->fetch(); $stmt->close();
     echo json_encode(["has_promo" => intval($h_free), "user_rank" => intval($u_rank)]);
     exit();
 }
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = intval($_POST['user_id'] ?? 0);
     $username = trim($_POST['username'] ?? '');
@@ -50,39 +55,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $clean_subdomain = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $custom_subdomain));
 
     $user_rank = 0; $has_free_server = 0;
-    $stmt = $custom_conn->prepare("SELECT has_free_server, `rank` FROM users_security_meta WHERE pterodactyl_user_id = ?");
+    $stmt = $conn->prepare("SELECT has_free_server, `rank` FROM users_security_meta WHERE pterodactyl_user_id = ?");
     $stmt->bind_param("i", $user_id); $stmt->execute(); $stmt->bind_result($has_free_server, $user_rank); $stmt->fetch(); $stmt->close();
 
     if ($user_rank !== 1 && $has_free_server !== 1) { die(json_encode(["status" => "error", "message" => "Nincs igénylési jogod!"])); }
 
-    $stmt = $custom_conn->prepare("SELECT id FROM allocated_domains WHERE pterodactyl_user_id = ?");
+    // DUPLIKÁCIÓ ELLENŐRZÉS
+    $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE pterodactyl_user_id = ?");
     $stmt->bind_param("i", $user_id); $stmt->execute(); $stmt->store_result();
     if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "Már van aktív szervered!"])); }
     $stmt->close();
 
+    // GEOROUTING AUTOMATIZÁCIÓ NODE 1 és NODE 2 KÖZÖTT
     $selected_node = 1;
-    $stmt = $custom_conn->prepare("SELECT node_id, COUNT(*) as cnt FROM (SELECT 1 as node_id UNION SELECT 2 as node_id) as n LEFT JOIN allocated_domains ON n.node_id = allocated_domains.node_id GROUP BY n.node_id ORDER BY cnt ASC LIMIT 1");
+    $stmt = $conn->prepare("SELECT node_id, COUNT(*) as cnt FROM (SELECT 1 as node_id UNION SELECT 2 as node_id) as n LEFT JOIN allocated_domains ON 1=1 GROUP BY node_id ORDER BY cnt ASC LIMIT 1");
     $stmt->execute(); $stmt->bind_result($best_node, $count); $stmt->fetch(); $stmt->close();
     if($best_node > 0) { $selected_node = $best_node; }
 
+    // PORT KIOSZTÁS AZ ELOSZTOTT RENDSZERBEN
     $assigned_port = 0;
     if ($allocation_type === 'full') {
         $assigned_port = 25565;
-        $stmt = $custom_conn->prepare("SELECT id FROM allocated_domains WHERE port = 25565 AND node_id = ?");
+        $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = 25565 AND node_id = ?");
         $stmt->bind_param("i", $selected_node); $stmt->execute(); $stmt->store_result();
         if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "A 25565 főport ezen a Node-on már foglalt!"])); }
         $stmt->close();
     } else {
         if ($custom_port >= 25565 && $custom_port <= 26000) {
             $assigned_port = $custom_port;
-            $stmt = $custom_conn->prepare("SELECT id FROM allocated_domains WHERE port = ? AND node_id = ?");
+            $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = ? AND node_id = ?");
             $stmt->bind_param("ii", $assigned_port, $selected_node); $stmt->execute(); $stmt->store_result();
             if ($stmt->num_rows > 0) { $stmt->close(); die(json_encode(["status" => "error", "message" => "A kért egyedi port ezen a Node-on foglalt!"])); }
             $stmt->close();
         } else {
             $assigned_port = 25566;
             while (true) {
-                $stmt = $custom_conn->prepare("SELECT id FROM allocated_domains WHERE port = ? AND node_id = ?");
+                $stmt = $conn->prepare("SELECT id FROM allocated_domains WHERE port = ? AND node_id = ?");
                 $stmt->bind_param("ii", $assigned_port, $selected_node); $stmt->execute(); $stmt->store_result();
                 if ($stmt->num_rows === 0) { $stmt->close(); break; }
                 $stmt->close(); $assigned_port++;
@@ -96,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $docker_image = "ghcr.io/pterodactyl/yolks:java_" . $java_version;
 
+    // PTERODACTYL API HÍVÁS
     $serverData = [
         "name" => $username . " - " . $clean_subdomain, "user" => $user_id, "nest" => 1, "egg" => $egg_id, "node" => $selected_node,
         "docker_image" => $docker_image, "startup" => $startup_cmd,
@@ -114,10 +123,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($http_code === 201 && isset($responseData['attributes']['id'])) {
         $server_uuid = $responseData['attributes']['uuid'];
 
-        $stmt = $custom_conn->prepare("INSERT INTO allocated_domains (pterodactyl_user_id, pterodactyl_server_id, subdomain, port, allocation_type, node_id) VALUES (?, ?, ?, ?, ?, ?)");
+        // ADATBÁZIS MENTÉS
+        $stmt = $conn->prepare("INSERT INTO allocated_domains (pterodactyl_user_id, pterodactyl_server_id, subdomain, port, allocation_type, node_id) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("issisi", $user_id, $server_uuid, $clean_subdomain, $assigned_port, $allocation_type, $selected_node);
         $stmt->execute(); $stmt->close();
 
+        // CLOUDFLARE DNS GENERÁLÁS V4
         $target_host = ($selected_node === 2) ? "node2.davidgames.uk" : "uramapanel.davidgames.uk";
         if ($allocation_type === 'full') {
             $dns_payload = ["type" => "CNAME", "name" => $clean_subdomain . ".davidgames.uk", "content" => $target_host, "ttl" => 1, "proxied" => false];
