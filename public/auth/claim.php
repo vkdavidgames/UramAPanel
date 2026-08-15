@@ -12,31 +12,12 @@ if (file_exists($env_file)) {
         $_ENV[trim($name)] = trim($value, " '\"");
     }
 }
-$db_host = $_ENV['DB_HOST'];
-$db_user = $_ENV['DB_USERNAME'];
-$db_pass = $_ENV['DB_PASSWORD'];
-$db_name = $_ENV['DB_DATABASE'];
+$db_host = $_ENV['DB_HOST'] ?? '127.0.0.1';
+$db_user = $_ENV['DB_USERNAME'] ?? 'pterodactyl';
+$db_pass = $_ENV['DB_PASSWORD'] ?? '';
+$db_name = $_ENV['DB_DATABASE'] ?? 'panel';
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-
-// --- SZERVEROLDALI LARA-SESSION AZONOSÍTÁS ---
-$logged_uid = 1;
-$logged_username = "admin";
-
-if (isset($_COOKIE['pterodactyl_session'])) {
-    // Kikeressük a legfrissebb aktív session-t, amihez tartozik érvényes felhasználó
-    $res = $conn->query("SELECT user_id FROM sessions WHERE id = '" . $conn->real_escape_string($_COOKIE['pterodactyl_session']) . "' LIMIT 1");
-    if ($res && $row = $res->fetch_assoc()) {
-        $u_id = intval($row['user_id']);
-        if ($u_id > 0) {
-            $u_res = $conn->query("SELECT id, username FROM users WHERE id = $u_id LIMIT 1");
-            if ($u_res && $u_row = $u_res->fetch_assoc()) {
-                $logged_uid = intval($u_row['id']);
-                $logged_username = $u_row['username'];
-            }
-        }
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="hu">
