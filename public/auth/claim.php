@@ -136,26 +136,26 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
         }
         async function identifyUser() {
             try {
-                // Biztonságos, natív Pterodactyl API hívás az éppen bejelentkezett session lekéréséhez
-                const response = await fetch('/api/client');
-                if (!response.ok) throw new Error('Nem sikerült elérni a session-t.');
-                
-                const data = await response.json();
-                // A Pterodactyl API-ból kiszedjük az éles felhasználói adatokat
-                if (data && data.meta && data.meta.user) {
-                    globalUserId = data.meta.user.id;
-                    globalUsername = data.meta.user.username;
+                // 1. Megpróbáljuk kinyerni a Pterodactyl hivatalos globális session objektumából
+                const parentWindow = window.parent;
+                if (parentWindow && parentWindow.PterodactylUser) {
+                    globalUserId = parentWindow.PterodactylUser.id;
+                    globalUsername = parentWindow.PterodactylUser.username;
+                } 
+                // 2. Ha a globális objektum nem elérhető, megpróbáljuk a gyári meta tageket
+                else if (parentWindow && parentWindow.document) {
+                    const metaUid = parentWindow.document.querySelector('meta[name="user-id"]');
+                    const metaUser = parentWindow.document.querySelector('meta[name="user-username"]');
+                    
+                    globalUserId = metaUid ? parseInt(metaUid.getAttribute('content')) : 1;
+                    globalUsername = metaUser ? metaUser.getAttribute('content') : "DavidAdmin";
                 } else {
-                    // Ha az API struktúra eltér, megpróbáljuk a gyári meta tagot
-                    const metaUser = window.parent.document.querySelector('meta[name="user-id"]');
-                    globalUserId = metaUser ? parseInt(metaUser.getAttribute('content')) : 1;
-                    globalUsername = metaUser ? metaUser.getAttribute('username') : "DavidAdmin";
+                    throw new Error('Nem található Pterodactyl session.');
                 }
                 
                 document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong>";
                 checkPromoStatus(globalUserId);
             } catch (e) {
-                // Ha még nincs bejelentkezve, vagy megszakadt a kapcsolat
                 globalUserId = 1; globalUsername = "DavidAdmin";
                 document.getElementById('user_display').innerHTML = "🔧 Teszt üzemmód (ID: 1)";
                 setupPromoLimits(true);
