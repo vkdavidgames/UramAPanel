@@ -18,6 +18,25 @@ $db_pass = $_ENV['DB_PASSWORD'];
 $db_name = $_ENV['DB_DATABASE'];
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+
+// --- SZERVEROLDALI LARA-SESSION AZONOSÍTÁS ---
+$logged_uid = 1;
+$logged_username = "admin";
+
+if (isset($_COOKIE['pterodactyl_session'])) {
+    // Kikeressük a legfrissebb aktív session-t, amihez tartozik érvényes felhasználó
+    $res = $conn->query("SELECT user_id FROM sessions WHERE id = '" . $conn->real_escape_match($_COOKIE['pterodactyl_session']) . "' LIMIT 1");
+    if ($res && $row = $res->fetch_assoc()) {
+        $u_id = intval($row['user_id']);
+        if ($u_id > 0) {
+            $u_res = $conn->query("SELECT id, username FROM users WHERE id = $u_id LIMIT 1");
+            if ($u_res && $u_row = $u_res->fetch_assoc()) {
+                $logged_uid = intval($u_row['id']);
+                $logged_username = $u_row['username'];
+            }
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="hu">
@@ -183,15 +202,19 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 
         async function identifyUser() {
             try {
-                const parentWindow = window.parent;
-                let foundUid = 0; let foundUser = "";
+                // A PHP szerveroldalon tűpontosan behelyettesíti az éppen bejelentkezett játékos adatait
+                globalUserId = <?php echo $logged_uid; ?>;
+                globalUsername = "<?php echo $logged_username; ?>";
 
-                if (parentWindow && parentWindow.store && parentWindow.store.getState) {
-                    const state = parentWindow.store.getState();
-                    if (state && state.user && state.user.data) {
-                        foundUid = state.user.data.id; foundUser = state.user.data.username;
-                    }
-                }
+                document.getElementById('user_display').innerHTML = "Bejelentkezve: <strong>" + globalUsername + "</strong> (ID: " + globalUserId + ")";
+                checkPromoStatus(globalUserId);
+            } catch (e) {
+                globalUserId = 1;
+                globalUsername = "admin";
+                document.getElementById('user_display').innerHTML = "🔧 Biztonsági Fallback (ID: 1)";
+                setupPromoLimits(true);
+            }
+        }
 
                 if (!foundUid && parentWindow && parentWindow.document) {
                     const metaUid = parentWindow.document.querySelector('meta[name="user-id"]') || parentWindow.document.querySelector('meta[name="pterodactyl-user-id"]');
