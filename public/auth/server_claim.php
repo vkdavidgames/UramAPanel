@@ -156,7 +156,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $final_ip = ($allocation_type === 'full') ? $clean_subdomain . ".davidgames.uk" : $clean_subdomain . ".davidgames.uk:" . $assigned_port;
         echo json_encode(["status" => "success", "message" => "Szerver sikeresen létrehozva!", "domain" => $final_ip]);
     } else {
-        $details = $responseData['errors']['detail'] ?? "API Hiba.";
+        // Kiolvassuk a Pterodactyl API által küldött pontos hibaüzenetet
+        if (isset($responseData['errors'])) {
+            $err_messages = [];
+            foreach ($responseData['errors'] as $err) {
+                $err_messages[] = ($err['source']['field'] ?? 'General') . ': ' . ($err['detail'] ?? 'Ismeretlen hiba');
+            }
+            $details = implode(' | ', $err_messages);
+        } else {
+            $details = "HTTP Kód: " . $http_code . " - Nincs válasz az API-tól.";
+        }
         echo json_encode(["status" => "error", "message" => "Hiba történt: " . $details]);
     }
     exit();
