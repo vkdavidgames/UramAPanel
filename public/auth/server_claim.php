@@ -2,21 +2,20 @@
 header("Content-Type: application/json");
 ini_set('display_errors', 0);
 
-// GOLYÓÁLLÓ .ENV BEOLVASÓ MOTOR
+// Tiszta .env beolvasás
 $env_file = '/var/www/pterodactyl/.env';
 if (file_exists($env_file)) {
     $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         $line = trim($line);
         if (empty($line) || strpos($line, '#') === 0 || strpos($line, '=') === false) continue;
-        
         list($name, $value) = explode('=', $line, 2);
         $_ENV[trim($name)] = trim($value, " '\"");
     }
 }
 
-// AZ ÁLTALAD ÍRT ENV HÍVÁSOK, GYÁRI PTERODACTYL FALLBACK VÉDELEMMEL
 $db_host = $_ENV['DB_HOST'];
+$db_port = $_ENV['DB_PORT'];
 $db_user = $_ENV['DB_USERNAME'];
 $db_pass = $_ENV['DB_PASSWORD'];
 $db_name = $_ENV['DB_DATABASE'];
@@ -29,7 +28,8 @@ $cf_email = $_ENV['CLOUDFLARE_EMAIL'];
 $cf_api_key = $_ENV['CLOUDFLARE_API_TOKEN'];
 $cf_zone_id = $_ENV['CLOUDFLARE_ZONE_ID'];
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+// KAPCSOLÓDÁS A GYÁRI PANEL ADATBÁZISHOZ
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port);
 if ($conn->connect_error) { die(json_encode(["status" => "error", "message" => "Adatbázis hiba."])); }
 
 if (isset($_POST['check_uid'])) {
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute(); $stmt->bind_result($best_node, $count); $stmt->fetch(); $stmt->close();
     if($best_node > 0) { $selected_node = $best_node; }
 
-    // PORT KIOSZTÁS AZ ELOSZTOTT RENDSZERBEN
+    // PORT KIOSZTÁS
     $assigned_port = 0;
     if ($allocation_type === 'full') {
         $assigned_port = 25565;
@@ -127,12 +127,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($http_code === 201 && isset($responseData['attributes']['id'])) {
         $server_uuid = $responseData['attributes']['uuid'];
 
-        // ADATBÁZIS MENTÉS
+        // MENTÉS A GYÁRI ADATBÁZISBA
         $stmt = $conn->prepare("INSERT INTO allocated_domains (pterodactyl_user_id, pterodactyl_server_id, subdomain, port, allocation_type, node_id) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("issisi", $user_id, $server_uuid, $clean_subdomain, $assigned_port, $allocation_type, $selected_node);
         $stmt->execute(); $stmt->close();
 
-        // CLOUDFLARE DNS GENERÁLÁS V4 (JAVÍTVA)
+        // CLOUDFLARE DNS GENERÁLÁS V4
         $target_host = ($selected_node === 2) ? "node2.davidgames.uk" : "uramapanel.davidgames.uk";
         if ($allocation_type === 'full') {
             $dns_payload = ["type" => "CNAME", "name" => $clean_subdomain . ".davidgames.uk", "content" => $target_host, "ttl" => 1, "proxied" => false];
