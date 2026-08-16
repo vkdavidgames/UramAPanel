@@ -52,3 +52,235 @@ chown: cannot dereference '/var/www/pterodactyl/storage/extensions/lyrdyannounce
 chown: cannot dereference '/var/www/pterodactyl/resources/views/blueprint/extensions/translations': No such file or directory
 chown: cannot dereference '/var/www/pterodactyl/resources/scripts/blueprint/css/imported/mctools.css': No such file or directory
 chown: cannot dereference '/var/www/pterodactyl/resources/scripts/blueprint/extensions/mctools': No such file or directory
+/var/www/pterodactyl/.env: line 9: $'\r': command not found
+/var/www/pterodactyl/.env: line 11: $'\r': command not found
+/var/www/pterodactyl/.env: line 16: $'\r': command not found
+/var/www/pterodactyl/.env: line 20: $'\r': command not found
+/var/www/pterodactyl/.env: line 27: $'\r': command not found
+/var/www/pterodactyl/.env: line 31: $'\r': command not found
+/var/www/pterodactyl/.env: line 35: $'\r': command not found
+/var/www/pterodactyl/.env: line 38: $'\r': command not found
+/var/www/pterodactyl/.env: line 52: $'\r': command not found
+/var/www/pterodactyl/.env: line 9: $'\r': command not found
+/var/www/pterodactyl/.env: line 11: $'\r': command not found
+/var/www/pterodactyl/.env: line 16: $'\r': command not found
+/var/www/pterodactyl/.env: line 20: $'\r': command not found
+/var/www/pterodactyl/.env: line 27: $'\r': command not found
+/var/www/pterodactyl/.env: line 31: $'\r': command not found
+/var/www/pterodactyl/.env: line 35: $'\r': command not found
+/var/www/pterodactyl/.env: line 38: $'\r': command not found
+/var/www/pterodactyl/.env: line 52: $'\r': command not found
+/var/www/pterodactyl/.env: line 9: $'\r': command not found
+/var/www/pterodactyl/.env: line 11: $'\r': command not found
+/var/www/pterodactyl/.env: line 16: $'\r': command not found
+/var/www/pterodactyl/.env: line 20: $'\r': command not found
+/var/www/pterodactyl/.env: line 27: $'\r': command not found
+/var/www/pterodactyl/.env: line 31: $'\r': command not found
+/var/www/pterodactyl/.env: line 35: $'\r': command not found
+/var/www/pterodactyl/.env: line 38: $'\r': command not found
+/var/www/pterodactyl/.env: line 52: $'\r': command not found
+/var/www/pterodactyl/.env: line 9: $'\r': command not found
+/var/www/pterodactyl/.env: line 11: $'\r': command not found
+/var/www/pterodactyl/.env: line 16: $'\r': command not found
+/var/www/pterodactyl/.env: line 20: $'\r': command not found
+/var/www/pterodactyl/.env: line 27: $'\r': command not found
+/var/www/pterodactyl/.env: line 31: $'\r': command not found
+/var/www/pterodactyl/.env: line 35: $'\r': command not found
+/var/www/pterodactyl/.env: line 38: $'\r': command not found
+/var/www/pterodactyl/.env: line 52: $'\r': command not found
+ln: failed to create symbolic link '/var/www/pterodactyl/resources/scripts/blueprint/extensions/mctools': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/extensions/mctools': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/mctools': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/mctools': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/mctools': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/mctools/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+chown: cannot dereference '/var/www/pterodactyl/public/assets/extensions/simplefavicons': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/assets/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/assets/extensions/simplefooters': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/assets/extensions/lyrdyannounce': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/fs/simplefavicons': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/fs/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/fs/simplefooters': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/fs/lyrdyannounce': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/extensions/lyrdyannounce': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/storage/extensions/simplefavicons': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/storage/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/storage/extensions/simplefooters': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/storage/extensions/lyrdyannounce': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/resources/views/blueprint/extensions/translations': No such file or directory
+/var/www/pterodactyl/.env: line 9: $'\r': command not found
+/var/www/pterodactyl/.env: line 11: $'\r': command not found
+/var/www/pterodactyl/.env: line 16: $'\r': command not found
+/var/www/pterodactyl/.env: line 20: $'\r': command not found
+/var/www/pterodactyl/.env: line 27: $'\r': command not found
+/var/www/pterodactyl/.env: line 31: $'\r': command not found
+/var/www/pterodactyl/.env: line 35: $'\r': command not found
+/var/www/pterodactyl/.env: line 38: $'\r': command not found
+/var/www/pterodactyl/.env: line 52: $'\r': command not found
+ln: failed to create symbolic link '/var/www/pterodactyl/public/extensions/lyrdyannounce': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/lyrdyannounce': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/lyrdyannounce': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/lyrdyannounce': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/lyrdyannounce/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+chown: cannot dereference '/var/www/pterodactyl/public/assets/extensions/simplefavicons': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/assets/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/assets/extensions/simplefooters': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/fs/simplefavicons': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/fs/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/fs/simplefooters': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/storage/extensions/simplefavicons': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/storage/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/storage/extensions/simplefooters': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/resources/views/blueprint/extensions/translations': No such file or directory
+/var/www/pterodactyl/.env: line 9: $'\r': command not found
+/var/www/pterodactyl/.env: line 11: $'\r': command not found
+/var/www/pterodactyl/.env: line 16: $'\r': command not found
+/var/www/pterodactyl/.env: line 20: $'\r': command not found
+/var/www/pterodactyl/.env: line 27: $'\r': command not found
+/var/www/pterodactyl/.env: line 31: $'\r': command not found
+/var/www/pterodactyl/.env: line 35: $'\r': command not found
+/var/www/pterodactyl/.env: line 38: $'\r': command not found
+/var/www/pterodactyl/.env: line 52: $'\r': command not found
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/simplefavicons': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/simplefavicons': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/simplefavicons': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/simplefavicons/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+chown: cannot dereference '/var/www/pterodactyl/public/assets/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/assets/extensions/simplefooters': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/fs/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/fs/simplefooters': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/storage/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/storage/extensions/simplefooters': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/resources/views/blueprint/extensions/translations': No such file or directory
+/var/www/pterodactyl/.env: line 9: $'\r': command not found
+/var/www/pterodactyl/.env: line 11: $'\r': command not found
+/var/www/pterodactyl/.env: line 16: $'\r': command not found
+/var/www/pterodactyl/.env: line 20: $'\r': command not found
+/var/www/pterodactyl/.env: line 27: $'\r': command not found
+/var/www/pterodactyl/.env: line 31: $'\r': command not found
+/var/www/pterodactyl/.env: line 35: $'\r': command not found
+/var/www/pterodactyl/.env: line 38: $'\r': command not found
+/var/www/pterodactyl/.env: line 52: $'\r': command not found
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/simplefooters': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/simplefooters': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/simplefooters': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/simplefooters/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+chown: cannot dereference '/var/www/pterodactyl/public/assets/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/fs/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/public/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/storage/extensions/translations': No such file or directory
+chown: cannot dereference '/var/www/pterodactyl/resources/views/blueprint/extensions/translations': No such file or directory
+/var/www/pterodactyl/.env: line 9: $'\r': command not found
+/var/www/pterodactyl/.env: line 11: $'\r': command not found
+/var/www/pterodactyl/.env: line 16: $'\r': command not found
+/var/www/pterodactyl/.env: line 20: $'\r': command not found
+/var/www/pterodactyl/.env: line 27: $'\r': command not found
+/var/www/pterodactyl/.env: line 31: $'\r': command not found
+/var/www/pterodactyl/.env: line 35: $'\r': command not found
+/var/www/pterodactyl/.env: line 38: $'\r': command not found
+/var/www/pterodactyl/.env: line 52: $'\r': command not found
+ln: failed to create symbolic link '/var/www/pterodactyl/resources/views/blueprint/extensions/translations': File exists
+rm: cannot remove '/var/www/pterodactyl/routes/blueprint/web/translations.php': No such file or directory
+ln: failed to create symbolic link '/var/www/pterodactyl/public/extensions/translations': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/translations': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/translations': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/translations': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/translations/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+

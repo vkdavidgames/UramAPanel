@@ -1,10 +1,10 @@
 import React from 'react';
-/* blueprint/import */
+/* blueprint/import */import MctoolsComponent from '@blueprint/extensions/mctools/elements/EditorAddons';
 
 export default () => {
   return (
     <>
-      {/* blueprint/react */}
+      {/* blueprint/react */}<MctoolsComponent />
     </>
   );
 };
