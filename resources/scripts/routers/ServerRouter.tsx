@@ -93,6 +93,13 @@ export default () => {
                     <TransferListener />
                     <WebsocketHandler />
                     <NavigationRouter />
+                    {/* BELSŐ REAT ÚTVONALAK REGISZTRÁCIÓJA (SAJÁT) */}
+                    <RouterSwitch>
+                        <Route path={`${match.path}/extensions`} exact><ModsContainer /></Route>
+                        <Route path={`${match.path}/config`} exact><ConfigEditor /></Route>
+                        <Route path={`${match.path}/design`} exact><ServerDesignEditor /></Route>
+                        <Route path={`${match.path}/players`} exact><PlayerManager /></Route>
+                    </RouterSwitch>
                 </>
             )}
         </React.Fragment>
