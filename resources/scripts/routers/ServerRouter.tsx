@@ -73,13 +73,12 @@ export default () => {
                             <BeforeSubNavigation />
                             <div>
                                 <NavigationLinks />
-                                <AdditionalServerItems>
-                                    {/* A Mi Helyreállított Egyedi Gombjaink */}
-                                    <NavLink to={`/server/${match.params.id}/extensions`} exact>Extension Manager</NavLink>
-                                    <NavLink to={`/server/${match.params.id}/config`} exact>Config Editor</NavLink>
-                                    <NavLink to={`/server/${match.params.id}/design`} exact>Server Design</NavLink>
-                                    <NavLink to={`/server/${match.params.id}/players`} exact>Player Manager</NavLink>
-                                </AdditionalServerItems>
+                                {/* A Mi Helyreállított Egyedi Gombjaink */}
+                                <NavLink to={`/server/${match.params.id}/extensions`} exact>Extension Manager</NavLink>
+                                <NavLink to={`/server/${match.params.id}/config`} exact>Config Editor</NavLink>
+                                <NavLink to={`/server/${match.params.id}/design`} exact>Server Design</NavLink>
+                                <NavLink to={`/server/${match.params.id}/players`} exact>Player Manager</NavLink>
+                                <AdditionalServerItems />
                                 {rootAdmin && (
                                     // eslint-disable-next-line react/jsx-no-target-blank
                                     <a href={`/admin/servers/view/${serverId}`} target={'_blank'}>
