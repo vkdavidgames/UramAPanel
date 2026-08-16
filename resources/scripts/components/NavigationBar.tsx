@@ -66,6 +66,46 @@ export default () => {
                 </div>
                 <RightNavigation className={'flex h-full items-center justify-center'}>
                     <SearchContainer />
+
+                    {/* ÖNELLÁTÓ IGÉNYLŐ GOMB ÉS IFRAME MODAL KONTÉNER */}
+                    <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+                        <button 
+                            onClick={() => {
+                                const m = document.getElementById('claim-modal');
+                                if (m) m.style.display = 'flex';
+                            }}
+                            style={{ 
+                                color: '#10b981', 
+                                fontWeight: 'bold', 
+                                position: 'relative', 
+                                zIndex: 99, 
+                                pointerEvents: 'auto',
+                                background: 'transparent',
+                                border: 'none',
+                                height: '100%',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Szerver Igénylés
+                        </button>
+
+                        <div id="claim-modal" style={{ display: 'none', position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 99999, justifyContent: 'center', alignItems: 'center', pointerEvents: 'auto' }}>
+                            <div style={{ position: 'relative', width: '100%', maxWidth: '420px', background: '#141417', borderRadius: '12px', padding: '10px', border: '1px solid #27272a', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+                                <button 
+                                    onClick={(e) => { 
+                                        e.stopPropagation();
+                                        const m = document.getElementById('claim-modal'); 
+                                        if (m) m.style.display = 'none'; 
+                                    }} 
+                                    style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.2rem', zIndex: 100000 }}
+                                >
+                                    ✕
+                                </button>
+                                <iframe src="/auth/claim.php" style={{ width: '100%', height: '650px', border: 'none', borderRadius: '8px', backgroundColor: 'transparent' }}></iframe>
+                            </div>
+                        </div>
+                    </div>
+
                     <Tooltip placement={'bottom'} content={'Dashboard'}>
                         <NavLink to={'/'} exact id={'NavigationDashboard'}>
                             <FontAwesomeIcon icon={faLayerGroup} />
