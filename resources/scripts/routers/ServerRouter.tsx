@@ -92,12 +92,7 @@ export default () => {
                     <InstallListener />
                     <TransferListener />
                     <WebsocketHandler />
-                    <NavigationRouter>
-                        <Route path={`${match.path}/extensions`} exact><ModsContainer /></Route>
-                        <Route path={`${match.path}/config`} exact><ConfigEditor /></Route>
-                        <Route path={`${match.path}/design`} exact><ServerDesignEditor /></Route>
-                        <Route path={`${match.path}/players`} exact><PlayerManager /></Route>
-                    </NavigationRouter>
+                    <NavigationRouter />
                 </>
             )}
         </React.Fragment>
