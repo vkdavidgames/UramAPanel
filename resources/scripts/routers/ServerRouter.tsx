@@ -19,6 +19,12 @@ import BeforeSubNavigation from '@blueprint/components/Navigation/SubNavigation/
 import AdditionalServerItems from '@blueprint/components/Navigation/SubNavigation/AdditionalServerItems';
 import AfterSubNavigation from '@blueprint/components/Navigation/SubNavigation/AfterSubNavigation';
 
+// EGYEDI RECOVERED COMPONENT IMPORTOK
+import ConfigEditor from '@/components/server/ConfigEditor';
+import ModsContainer from '@/components/server/ModsContainer';
+import ServerDesignEditor from '@/components/server/ServerDesignEditor';
+import PlayerManager from '@/components/server/PlayerManager';
+
 export default () => {
     const match = useRouteMatch<{ id: string }>();
 
