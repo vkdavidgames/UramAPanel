@@ -148,7 +148,17 @@ InstallExtension() {
       return 1
     fi
 
-    eval "$(parse_yaml .blueprint/extensions/"${identifier}"/private/.store/conf.yml old_)"
+    while IFS= read -r assignment; do
+      if [[ -z "$assignment" ]]; then
+        continue
+      fi
+
+      if [[ $assignment =~ ^old_[a-zA-Z0-9_]*= ]]; then
+        eval "$assignment"
+      else
+        PRINT WARNING "Ignoring malformed stored extension configuration entry while updating '$identifier'."
+      fi
+    done < <(parse_yaml ".blueprint/extensions/${identifier}/private/.store/conf.yml" old_)
     local DUPLICATE="y"
 
     # run extension update script
@@ -1165,7 +1175,8 @@ InstallExtension() {
       -e "s~\[webicon\]~$websiteiconclass~g" \
       "$AdminBladeConstructor"
   fi
-  echo -e "$(<".blueprint/tmp/$admin_view")\n@endsection" >> "$AdminBladeConstructor"
+  cat ".blueprint/tmp/$admin_view" >> "$AdminBladeConstructor"
+  printf '\n@endsection\n' >> "$AdminBladeConstructor"
 
   # Construct admin controller
   if [[ $controller_type == "default" ]]; then sed -i "s~\[id\]~$identifier~g" "$AdminControllerConstructor"; fi

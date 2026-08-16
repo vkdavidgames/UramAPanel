@@ -1,1 +1,0 @@
-../../../../../.blueprint/extensions/lyrdyannounce/wrappers/dashboard.blade.php

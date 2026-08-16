@@ -1,1 +1,0 @@
-../../../../../.blueprint/extensions/simplefavicons/wrappers/admin.blade.php

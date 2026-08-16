@@ -1,1 +1,0 @@
-/* MctoolsStart */ 'blueprint:mctools' => [ 'driver' => 'local', 'root' => storage_path('extensions/mctools'), 'url' => env('APP_URL') . '/fs/extensions/mctools', 'visibility' => 'public', 'throw' => false, ], 'blueprint_private:mctools' => [ 'driver' => 'local', 'root' => storage_path('.extensions/mctools'), 'throw' => false, ], /* MctoolsEnd */

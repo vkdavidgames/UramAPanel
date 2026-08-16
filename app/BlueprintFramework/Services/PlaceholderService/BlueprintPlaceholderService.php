@@ -6,7 +6,7 @@ class BlueprintPlaceholderService
 {
   public function version(): string
   {
-    $ver = "::v";
+    $ver = "beta-2026-08";
     if ($ver == '::'.'v') {
       return 'unknown';
     }
@@ -18,7 +18,7 @@ class BlueprintPlaceholderService
   }
   public function installed(): string
   {
-    return "NOTINSTALLED";
+    return "INSTALLED";
   }
   public function api_url(): string
   {
