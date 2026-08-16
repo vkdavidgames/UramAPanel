@@ -81,7 +81,7 @@ export default () => {
                                 <AdditionalServerItems />
                                 {rootAdmin && (
                                     // eslint-disable-next-line react/jsx-no-target-blank
-                                    <a href={`/admin/servers/view/${serverId}`} target={'_blank'}>
+                                    <a href={`/admin/servers/view/${serverId}`} target={'_blank'} rel="noreferrer">
                                         <FontAwesomeIcon icon={faExternalLinkAlt} />
                                     </a>
                                 )}
@@ -92,14 +92,12 @@ export default () => {
                     <InstallListener />
                     <TransferListener />
                     <WebsocketHandler />
-                    <NavigationRouter />
-                    {/* BELSŐ REAT ÚTVONALAK REGISZTRÁCIÓJA (SAJÁT) */}
-                    <RouterSwitch>
+                    <NavigationRouter>
                         <Route path={`${match.path}/extensions`} exact><ModsContainer /></Route>
                         <Route path={`${match.path}/config`} exact><ConfigEditor /></Route>
                         <Route path={`${match.path}/design`} exact><ServerDesignEditor /></Route>
                         <Route path={`${match.path}/players`} exact><PlayerManager /></Route>
-                    </RouterSwitch>
+                    </NavigationRouter>
                 </>
             )}
         </React.Fragment>
