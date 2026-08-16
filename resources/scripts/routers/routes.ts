@@ -13,6 +13,10 @@ import AccountApiContainer from '@/components/dashboard/AccountApiContainer';
 import AccountSSHContainer from '@/components/dashboard/ssh/AccountSSHContainer';
 import ActivityLogContainer from '@/components/dashboard/activity/ActivityLogContainer';
 import ServerActivityLogContainer from '@/components/server/ServerActivityLogContainer';
+import ConfigEditor from '@/components/server/ConfigEditor';
+import ModsContainer from '@/components/server/ModsContainer';
+import ServerDesignEditor from '@/components/server/ServerDesignEditor';
+import PlayerManager from '@/components/server/PlayerManager';
 
 // Each of the router files is already code split out appropriately — so
 // all of the items above will only be loaded in when that router is loaded.
@@ -139,6 +143,30 @@ export default {
             permission: 'activity.*',
             name: 'Activity',
             component: ServerActivityLogContainer,
+        },
+        {
+            path: '/extensions',
+            permission: 'file.*',
+            name: 'Extension Manager',
+            component: ModsContainer,
+        },
+        {
+            path: '/config',
+            permission: ['file.*', 'settings.*'],
+            name: 'Config Editor',
+            component: ConfigEditor,
+        },
+        {
+            path: '/design',
+            permission: ['file.*', 'settings.*'],
+            name: 'Server Design',
+            component: ServerDesignEditor,
+        },
+        {
+            path: '/players',
+            permission: 'file.*',
+            name: 'Player Manager',
+            component: PlayerManager,
         },
     ],
 } as Routes;
