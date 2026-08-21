@@ -48,16 +48,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['icon_file'])) {
     $motd = trim($data['motd'] ?? '');
     $icon = trim($data['icon'] ?? 'default');
 
-    if ($server_id === 0) { die(json_encode(["status" => "error", "message" => "Érvénytelen adatok."])); }
-
     $stmt = $conn->prepare("INSERT INTO allocated_domains (id, motd, icon) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE motd = ?, icon = ?");
     $stmt->bind_param("issss", $server_id, $motd, $icon, $motd, $icon);
     if ($stmt->execute()) {
-        echo json_encode(["status" => "success", "message" => "Beállítások sikeresen mentve!"]);
+        $stmt->close();
+        
+        // HA A GYÁRI LOGÓT VÁLASZTOTTA, AZONNAL ÁTMÁSOLJUK A SZERVER GYÖKÉRBE
+        if ($icon === 'default') {
+            $stmt_uuid = $conn->prepare("SELECT uuid FROM servers WHERE id = ?");
+            $stmt_uuid->bind_param("i", $server_id);
+            $stmt_uuid->execute();
+            $stmt_uuid->bind_result($s_uuid);
+            if ($stmt_uuid->fetch()) {
+                $s_uuid = trim($s_uuid);
+                $default_source = "/var/www/pterodactyl/public/auth/default-icon.png";
+                $target_dest = "/var/lib/pterodactyl/volumes/" . $s_uuid . "/server-icon.png";
+                
+                if (file_exists($default_source) && is_dir("/var/lib/pterodactyl/volumes/" . $s_uuid)) {
+                    copy($default_source, $target_dest);
+                    chown($target_dest, "pterodactyl");
+                }
+            }
+            $stmt_uuid->close();
+        }
+        
+        echo json_encode(["status" => "success", "message" => "Beállítások sikeresen mentve és az ikon szinkronizálva!"]);
     } else {
+        $stmt->close();
         echo json_encode(["status" => "error", "message" => "Nem sikerült menteni az adatbázisba."]);
     }
-    $stmt->close();
     exit();
 }
 
