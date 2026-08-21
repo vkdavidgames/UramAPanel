@@ -61,7 +61,7 @@ export default () => {
         clearFlashes('server-design');
 
         const formData = new FormData();
-        formData.append('server_id', String(serverId));
+        formData.append('server_uuid', String(serverUuid));
         formData.append('icon_file', file);
 
         axios.post('/auth/design_backend.php', formData, {
@@ -86,7 +86,7 @@ export default () => {
     useEffect(() => {
         if (!serverId) return;
         
-        axios.get(`/auth/design_backend.php?server_id=${serverId}`)
+        axios.get(`/auth/design_backend.php?server_uuid=${serverUuid}`)
             .then((response) => {
                 if (response.data && response.data.status === 'success') {
                     setMotd(response.data.motd || '');
@@ -127,7 +127,7 @@ export default () => {
         clearFlashes('server-design');
 
         axios.post('/auth/design_backend.php', {
-            server_id: serverId,
+            server_uuid: serverUuid,
             motd: motd,
             icon: serverIcon
         })
