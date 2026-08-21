@@ -11,7 +11,7 @@ import axios from 'axios';
 
 export default () => {
     const serverName = ServerContext.useStoreState((state) => state.server.data?.name) || 'Minecraft Szerver';
-    const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
+    const serverUuid = ServerContext.useStoreState((state) => state.server.data?.uuid);
     
     const { addFlash, clearFlashes } = useFlash();
     const inputRef = useRef<HTMLInputElement>(null);
