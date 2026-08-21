@@ -11,6 +11,7 @@ import axios from 'axios';
 
 export default () => {
     const serverName = ServerContext.useStoreState((state) => state.server.data?.name) || 'Minecraft Szerver';
+    const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
     const serverUuid = ServerContext.useStoreState((state) => state.server.data?.uuid);
     
     const { addFlash, clearFlashes } = useFlash();
@@ -52,41 +53,10 @@ export default () => {
         { code: '&r', name: 'Reset', isMagic: false },
     ];
 
-    // DINAMIKUS ÉLŐ KÉPFELTÖLTÉS ÉS AUTOMATIKUS ÁTMENTÉS
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !serverId) return;
-
-        setIsSubmittingFile(true);
-        clearFlashes('server-design');
-
-        const formData = new FormData();
-        formData.append('server_uuid', String(serverUuid));
-        formData.append('icon_file', file);
-
-        axios.post('/auth/design_backend.php', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        })
-        .then((response) => {
-            if (response.data && response.data.status === 'success') {
-                setServerIcon('custom');
-                setPreviewIconUrl(URL.createObjectURL(file)); // Azonnali kliensoldali képcsere a preview-ban
-                addFlash({ key: 'server-design', type: 'success', message: response.data.message });
-            } else {
-                addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Hiba a feltöltés közben.' });
-            }
-        })
-        .catch(() => {
-            addFlash({ key: 'server-design', type: 'error', message: 'Hálózati hiba történt a kép feldolgozásakor.' });
-        })
-        .finally(() => {
-            setIsSubmittingFile(false);
-        });
-    };
     useEffect(() => {
         if (!serverId) return;
         
-        axios.get(`/auth/design_backend.php?server_uuid=${serverUuid}`)
+        axios.get(`/auth/design_backend.php?server_id=${serverId}`)
             .then((response) => {
                 if (response.data && response.data.status === 'success') {
                     setMotd(response.data.motd || '');
@@ -103,6 +73,37 @@ export default () => {
                 setIsLoading(false);
             });
     }, [serverId]);
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !serverId) return;
+
+        setIsSubmittingFile(true);
+        clearFlashes('server-design');
+
+        const formData = new FormData();
+        formData.append('server_id', String(serverId));
+        formData.append('icon_file', file);
+
+        axios.post('/auth/design_backend.php', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        .then((response) => {
+            if (response.data && response.data.status === 'success') {
+                setServerIcon('custom');
+                setPreviewIconUrl(URL.createObjectURL(file));
+                addFlash({ key: 'server-design', type: 'success', message: response.data.message });
+            } else {
+                addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Hiba a feltöltés közben.' });
+            }
+        })
+        .catch(() => {
+            addFlash({ key: 'server-design', type: 'error', message: 'Hálózati hiba történt a kép feldolgozásakor.' });
+        })
+        .finally(() => {
+            setIsSubmittingFile(false);
+        });
+    };
 
     const insertCode = (code: string) => {
         const input = inputRef.current;
@@ -127,7 +128,7 @@ export default () => {
         clearFlashes('server-design');
 
         axios.post('/auth/design_backend.php', {
-            server_uuid: serverUuid,
+            server_id: serverId,
             motd: motd,
             icon: serverIcon
         })
@@ -200,6 +201,7 @@ export default () => {
             return <span key={index} style={currentStyle}>{part}</span>;
         });
     };
+
     return (
         <ServerContentBlock title={'Server Design'}>
             <FlashMessageRender byKey={'server-design'} css={tw`mb-4`} />
@@ -209,7 +211,6 @@ export default () => {
             ) : (
                 <div css={tw`grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1200px] mx-auto`}>
                     
-                    {/* BAL OLDAL: EMELT SZINTŰ SZERKESZTŐ PULT */}
                     <div css={tw`md:col-span-2 space-y-6`}>
                         <form onSubmit={handleFormSubmit}>
                             <TitledGreyBox title={'Szerver Megjelenés és MOTD Panel'}>
@@ -220,9 +221,8 @@ export default () => {
                                             Vizuális Minecraft Színválasztó Gombok
                                         </label>
                                         
-                                        {/* SZÍN PALETTA GOMBOK */}
                                         <div css={tw`flex flex-wrap gap-1.5 p-2 bg-neutral-900 border border-neutral-800 rounded-md`}>
-                                            {mcColors.map((color) => (
+                                        {mcColors.map((color) => (
                                                 <button
                                                     key={color.code}
                                                     type="button"
@@ -238,7 +238,6 @@ export default () => {
                                             ))}
                                         </div>
 
-                                        {/* STÍLUS GOMBOK (BENNE A LILA MÁGIKUS GOMBBAL) */}
                                         <div css={tw`flex flex-wrap gap-1.5 mt-2 p-1.5 bg-neutral-900 border border-neutral-800 rounded-md`}>
                                             {mcStyles.map((style) => (
                                                 <button
@@ -284,7 +283,6 @@ export default () => {
                                                     <option value="custom">Egyedi feltöltött ikon használata (server-icon.png)</option>
                                                 </select>
                                                 
-                                                {/* REJTETT CÉL INPUT A FÁJLOKNAK */}
                                                 <input 
                                                     ref={fileInputRef}
                                                     type="file" 
@@ -316,23 +314,19 @@ export default () => {
                         </form>
                     </div>
 
-                    {/* JOBB OLDAL: MULTIPLAYER LISTA ELŐNÉZET (TÉNYLEGES NÉVVEL ÉS REJTETT MINECRAFT HÁTTÉRREL) */}
                     <div css={tw`space-y-6`}>
                         <TitledGreyBox title={'Élő Szerverlista Előnézet'}>
-                            {/* MINECRAFT SZERVERSZOBA SÖTÉTÍTETT STÍLUSÚ HÁTTÉR - FIX GRAFIKAI VIBE */}
                             <div 
                                 style={{ 
-                                    backgroundImage: "matrix(1, 0, 0, 1, 0, 0)",
                                     backgroundColor: '#1e1e1e',
                                     backgroundSize: '16px 16px',
                                     imageRendering: 'pixelated'
                                 }}
-                                css={tw`w-full rounded p-3 shadow-2xl relative border border-neutral-900`}
+                                css={tw`w-full rounded p-3 shadow-2xl relative border border-neutral-950`}
                             >
                                 <div css={tw`bg-black bg-opacity-80 border border-neutral-900 rounded p-3 font-mono text-sm shadow-inner flex items-start space-x-3 select-none`}>
                                     
-                                    {/* DINAMIKUS IKON BOX */}
-                                    <div css={tw`w-16 h-16 bg-neutral-900 border border-neutral-800 rounded flex items-center justify-center flex-shrink-0 overflow-hidden`}>
+                                    <div css={tw`w-16 h-16 bg-neutral-950 border border-neutral-800 rounded flex items-center justify-center flex-shrink-0 overflow-hidden`}>
                                         {serverIcon === 'default' || !previewIconUrl ? (
                                             <div css={tw`w-full h-full bg-gradient-to-br from-cyan-900 to-neutral-900 flex items-center justify-center text-[10px] text-cyan-400 font-sans font-bold tracking-tighter text-center uppercase`}>
                                                 DG LOGO
@@ -342,7 +336,6 @@ export default () => {
                                         )}
                                     </div>
 
-                                    {/* RENDELT PREVIEW TEXT */}
                                     <div css={tw`flex-1 min-w-0`}>
                                         <div css={tw`flex justify-between items-center mb-1`}>
                                             <span css={tw`text-neutral-200 font-bold truncate text-xs font-sans`}>{serverName}</span>
