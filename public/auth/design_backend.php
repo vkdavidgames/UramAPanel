@@ -23,13 +23,26 @@ $db_name = $_ENV['DB_DATABASE'];
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port);
 if ($conn->connect_error) { die(json_encode(["status" => "error", "message" => "Adatbázis hiba."])); }
 
-// GET KÉRÉS: Adatok betöltése
+// GET KÉRÉS: Adatok betöltése a frontendnek
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $server_id = intval($_GET['server_id'] ?? 0);
     if ($server_id === 0) { die(json_encode(["status" => "error", "message" => "Hiányzó szerver ID."])); }
 
-    $stmt = $conn->prepare("SELECT motd, icon FROM allocated_domains WHERE id = ?");
-    $stmt->bind_param("i", $server_id);
+    // Kikeressük az adott Pterodactyl szerver ID-hoz tartozó UUID-t
+    $stmt_uuid = $conn->prepare("SELECT uuid FROM servers WHERE id = ?");
+    $stmt_uuid->bind_param("i", $server_id);
+    $stmt_uuid->execute();
+    $stmt_uuid->bind_result($server_uuid);
+    if (!$stmt_uuid->fetch()) {
+        $stmt_uuid->close();
+        die(json_encode(["status" => "success", "motd" => "", "icon" => "default"]));
+    }
+    $stmt_uuid->close();
+    $server_uuid = trim($server_uuid);
+
+    // Az UUID alapján kérjük le a mentett egyedi dizájn adatokat
+    $stmt = $conn->prepare("SELECT motd, icon FROM allocated_domains WHERE pterodactyl_server_id = ?");
+    $stmt->bind_param("s", $server_uuid);
     $stmt->execute();
     $stmt->bind_result($motd, $icon);
     if ($stmt->fetch()) {
@@ -50,35 +63,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['icon_file'])) {
 
     if ($server_id === 0) { die(json_encode(["status" => "error", "message" => "Érvénytelen adatok."])); }
 
-    // Elmentjük a mi táblánkba az adatokat az ID alapján
-    $stmt = $conn->prepare("INSERT INTO allocated_domains (id, motd, icon) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE motd = ?, icon = ?");
-    $stmt->bind_param("issss", $server_id, $motd, $icon, $motd, $icon);
+    // Lekérjük a valós UUID-t az ID alapján
+    $stmt_uuid = $conn->prepare("SELECT uuid FROM servers WHERE id = ?");
+    $stmt_uuid->bind_param("i", $server_id);
+    $stmt_uuid->execute();
+    $stmt_uuid->bind_result($server_uuid);
+    if (!$stmt_uuid->fetch()) {
+        $stmt_uuid->close();
+        die(json_encode(["status" => "error", "message" => "Szerver nem található."]));
+    }
+    $stmt_uuid->close();
+    $server_uuid = trim($server_uuid);
+
+    // GOLYÓÁLLÓ FRISSÍTÉS: Közvetlenül az UUID alapján módosítjuk a meglévő sort
+    $stmt = $conn->prepare("UPDATE allocated_domains SET motd = ?, icon = ? WHERE pterodactyl_server_id = ?");
+    $stmt->bind_param("sss", $motd, $icon, $server_uuid);
+    
     if ($stmt->execute()) {
         $stmt->close();
         
-        // HA A GYÁRI LOGÓT VÁLASZTOTTA, ÁTMÁSOLJUK A SZERVER GYÖKÉRBE
+        // HA A GYÁRI LOGÓT VÁLASZTOTTA, AZONNAL ÁTMÁSOLJUK A SZERVER MAZZÁJÁBA
         if ($icon === 'default') {
-            $stmt_uuid = $conn->prepare("SELECT uuid FROM servers WHERE id = ?");
-            $stmt_uuid->bind_param("i", $server_id);
-            $stmt_uuid->execute();
-            $stmt_uuid->bind_result($s_uuid);
-            if ($stmt_uuid->fetch()) {
-                $s_uuid = trim($s_uuid);
-                $default_source = "/var/www/pterodactyl/public/auth/default-icon.png";
-                $target_dest = "/var/lib/pterodactyl/volumes/" . $s_uuid . "/server-icon.png";
-                
-                if (file_exists($default_source) && is_dir("/var/lib/pterodactyl/volumes/" . $s_uuid)) {
-                    copy($default_source, $target_dest);
-                    chown($target_dest, "pterodactyl");
-                }
+            $default_source = "/var/www/pterodactyl/public/auth/default-icon.png";
+            $target_dest = "/var/lib/pterodactyl/volumes/" . $server_uuid . "/server-icon.png";
+            
+            if (file_exists($default_source) && is_dir("/var/lib/pterodactyl/volumes/" . $server_uuid)) {
+                copy($default_source, $target_dest);
+                chown($target_dest, "pterodactyl");
             }
-            $stmt_uuid->close();
         }
         
         echo json_encode(["status" => "success", "message" => "Beállítások sikeresen mentve és az ikon szinkronizálva!"]);
     } else {
         $stmt->close();
-        echo json_encode(["status" => "error", "message" => "Nem sikerült menteni az adatbázisba."]);
+        echo json_encode(["status" => "error", "message" => "Nem sikerült frissíteni az adatbázist."]);
     }
     exit();
 }
@@ -88,23 +106,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['icon_file'])) {
     $server_id = intval($_POST['server_id'] ?? 0);
     if ($server_id === 0) { die(json_encode(["status" => "error", "message" => "Érvénytelen szerver ID."])); }
 
-    // GOLYÓÁLLÓ KERESÉS: Kinyerjük a fizikai mappa UUID-ját a gyári táblából az ID alapján
     $stmt = $conn->prepare("SELECT uuid FROM servers WHERE id = ?");
     $stmt->bind_param("i", $server_id);
     $stmt->execute();
     $stmt->bind_result($server_uuid);
     if (!$stmt->fetch()) { 
         $stmt->close(); 
-        die(json_encode(["status" => "error", "message" => "Szerver nem található az adatbázisban (Kért ID: " . $server_id . ")."])); 
+        die(json_encode(["status" => "error", "message" => "Szerver nem található az adatbázisban."])); 
     }
     $stmt->close();
 
     $server_uuid = trim($server_uuid);
     $target_dir = "/var/lib/pterodactyl/volumes/" . $server_uuid . "/";
     
-    // Ellenőrizzük, hogy a Pterodactyl kötet fizikálisan létezik-e a lemezen
     if (!is_dir($target_dir)) { 
-        die(json_encode(["status" => "error", "message" => "A szerver gyökérmappája nem elérhető a lemezen (Keresett út: " . $target_dir . ")."])); 
+        die(json_encode(["status" => "error", "message" => "A szerver gyökérmappája nem elérhető."])); 
     }
 
     $file = $_FILES['icon_file'];
@@ -120,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['icon_file'])) {
         $src_img = @imagecreatefromjpeg($file['tmp_name']);
     }
 
-    if (!$src_img) { die(json_encode(["status" => "error", "message" => "A képfájl sérült vagy hibás."])); }
+    if (!$src_img) { die(json_encode(["status" => "error", "message" => "A képfájl sérült."])); }
 
     $dst_img = imagecreatetruecolor(64, 64);
     imagealphablending($dst_img, false);
@@ -132,13 +148,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['icon_file'])) {
 
     $final_path = $target_dir . "server-icon.png";
     if (imagepng($dst_img, $final_path)) {
-        // Pterodactyl belső jogosultság átadása
         chown($final_path, "pterodactyl");
         
-        // Elmentjük a mi adatbázisunkba is, hogy egyedi ikont használ
         $icon_status = "custom";
-        $stmt = $conn->prepare("INSERT INTO allocated_domains (id, icon) VALUES (?, ?) ON DUPLICATE KEY UPDATE icon = ?");
-        $stmt->bind_param("iss", $server_id, $icon_status, $icon_status);
+        $stmt = $conn->prepare("UPDATE allocated_domains SET icon = ? WHERE pterodactyl_server_id = ?");
+        $stmt->bind_param("ss", $icon_status, $server_uuid);
         $stmt->execute();
         $stmt->close();
 
