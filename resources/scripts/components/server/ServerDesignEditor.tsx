@@ -10,19 +10,20 @@ import tw from 'twin.macro';
 import axios from 'axios';
 
 export default () => {
-    // LEKÉRJÜK A SZERVER TÉNYLEGES NEVÉT ÉS BELSŐ ID-JÁT A REACT STORE-BÓL
     const serverName = ServerContext.useStoreState((state) => state.server.data?.name) || 'Minecraft Szerver';
     const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
     
     const { addFlash, clearFlashes } = useFlash();
     const inputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const [motd, setMotd] = useState('');
     const [serverIcon, setServerIcon] = useState('default');
+    const [previewIconUrl, setPreviewIconUrl] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploading, setIsSubmittingFile] = useState(false);
 
-    // MINECRAFT SZÍNEK DEFINÍCIÓJA A VIZUÁLIS GOMBOKHOZ
     const mcColors = [
         { code: '&0', name: 'Fekete', hex: '#000000' },
         { code: '&1', name: 'Sötétkék', hex: '#0000aa' },
@@ -42,7 +43,6 @@ export default () => {
         { code: '&f', name: 'Fehér', hex: '#ffffff' },
     ];
 
-    // MINECRAFT FONT STÍLUSOK, BENNE A LILA MÁGIKUS GOMBBAL (&k)
     const mcStyles = [
         { code: '&k', name: 'Mágikus', isMagic: true },
         { code: '&l', name: 'Félkövér', isMagic: false },
@@ -51,6 +51,38 @@ export default () => {
         { code: '&o', name: 'Dőlt', isMagic: false },
         { code: '&r', name: 'Reset', isMagic: false },
     ];
+
+    // DINAMIKUS ÉLŐ KÉPFELTÖLTÉS ÉS AUTOMATIKUS ÁTMENTÉS
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !serverId) return;
+
+        setIsSubmittingFile(true);
+        clearFlashes('server-design');
+
+        const formData = new FormData();
+        formData.append('server_id', String(serverId));
+        formData.append('icon_file', file);
+
+        axios.post('/auth/design_backend.php', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        .then((response) => {
+            if (response.data && response.data.status === 'success') {
+                setServerIcon('custom');
+                setPreviewIconUrl(URL.createObjectURL(file)); // Azonnali kliensoldali képcsere a preview-ban
+                addFlash({ key: 'server-design', type: 'success', message: response.data.message });
+            } else {
+                addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Hiba a feltöltés közben.' });
+            }
+        })
+        .catch(() => {
+            addFlash({ key: 'server-design', type: 'error', message: 'Hálózati hiba történt a kép feldolgozásakor.' });
+        })
+        .finally(() => {
+            setIsSubmittingFile(false);
+        });
+    };
     useEffect(() => {
         if (!serverId) return;
         
@@ -72,7 +104,6 @@ export default () => {
             });
     }, [serverId]);
 
-    // INTELLIGENS SZÍNKÓD BESZÚRÓ A KURZORHOZ
     const insertCode = (code: string) => {
         const input = inputRef.current;
         if (!input) return;
@@ -116,7 +147,6 @@ export default () => {
             });
     };
 
-    // PROFI MINECRAFT PARSER AZ ÉLŐ PREVIEW-HOZ (ANIMÁLT MÁGIKUS KÓDDAL)
     const parseMotdToHtml = (text: string) => {
         if (!text) return <span className="text-neutral-500">A DavidGames Minecraft Szervere</span>;
         
@@ -155,12 +185,11 @@ export default () => {
 
             if (!part) return null;
 
-            // Ha a Mágikus mód aktív, megpörgetjük a karaktereket
             if (isMagicActive) {
                 return (
                     <span key={index} style={currentStyle} className="magic-text">
                         {part.split('').map((char, charIdx) => (
-                            <span key={charIdx} style={{ display: 'inline-block', animation: `none`, fontFamily: 'monospace' }}>
+                            <span key={charIdx} style={{ display: 'inline-block', fontFamily: 'monospace' }}>
                                 {String.fromCharCode(33 + Math.floor(Math.random() * 60))}
                             </span>
                         ))}
@@ -241,16 +270,40 @@ export default () => {
 
                                     <div>
                                         <label css={tw`text-xs font-semibold uppercase text-neutral-400 block mb-2`}>
-                                            Szerver Ikon Típusa
+                                            Szerver Ikon Kezelés
                                         </label>
-                                        <select
-                                            value={serverIcon}
-                                            onChange={(e) => setServerIcon(e.target.value)}
-                                            css={tw`w-full bg-neutral-800 border border-neutral-700 rounded-md text-neutral-200 p-3 text-sm focus:outline-none focus:border-cyan-500`}
-                                        >
-                                            <option value="default">Gyári Központi DavidGames logó használata</option>
-                                            <option value="custom">Egyedi feltöltés (server-icon.png a főmappából)</option>
-                                        </select>
+                                        
+                                        <div css={tw`flex flex-col sm:flex-row gap-4 items-start sm:items-center p-4 bg-neutral-900 border border-neutral-800 rounded-md`}>
+                                            <div css={tw`flex-1`}>
+                                                <select
+                                                    value={serverIcon}
+                                                    onChange={(e) => setServerIcon(e.target.value)}
+                                                    css={tw`w-full bg-neutral-800 border border-neutral-700 rounded-md text-neutral-200 p-2 text-sm focus:outline-none focus:border-cyan-500 mb-3`}
+                                                >
+                                                    <option value="default">Gyári Központi DavidGames logó használata</option>
+                                                    <option value="custom">Egyedi feltöltött ikon használata (server-icon.png)</option>
+                                                </select>
+                                                
+                                                {/* REJTETT CÉL INPUT A FÁJLOKNAK */}
+                                                <input 
+                                                    ref={fileInputRef}
+                                                    type="file" 
+                                                    accept="image/png, image/jpeg, image/jpg" 
+                                                    onChange={handleFileUpload} 
+                                                    css={tw`hidden`} 
+                                                />
+                                                
+                                                <Button 
+                                                    type="button" 
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    isLoading={isUploading}
+                                                    disabled={isUploading}
+                                                    css={tw`w-full text-xs`}
+                                                >
+                                                    {isUploading ? 'Ikon feldolgozása...' : 'Új Ikon Feltöltése (.png, .jpg)'}
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div css={tw`flex justify-end pt-2`}>
@@ -263,31 +316,44 @@ export default () => {
                         </form>
                     </div>
 
-                    {/* JOBB OLDAL: MULTIPLAYER LISTA ELŐNÉZET (TÉNYLEGES NÉVVEL) */}
+                    {/* JOBB OLDAL: MULTIPLAYER LISTA ELŐNÉZET (TÉNYLEGES NÉVVEL ÉS REJTETT MINECRAFT HÁTTÉRREL) */}
                     <div css={tw`space-y-6`}>
                         <TitledGreyBox title={'Élő Szerverlista Előnézet'}>
-                            <div css={tw`bg-black border border-neutral-900 rounded p-4 font-mono text-sm shadow-inner flex items-start space-x-3 select-none`}>
-                                
-                                {/* DINAMIKUS IKON BOX */}
-                                <div css={tw`w-16 h-16 bg-neutral-900 border border-neutral-800 rounded flex items-center justify-center flex-shrink-0 overflow-hidden`}>
-                                    {serverIcon === 'default' ? (
-                                        <span css={tw`text-xs text-neutral-600 uppercase font-sans tracking-tighter text-center px-1`}>DG LOGO</span>
-                                    ) : (
-                                        <span css={tw`text-xs text-cyan-600 uppercase font-sans tracking-tighter text-center px-1`}>PNG ICON</span>
-                                    )}
-                                </div>
-
-                                {/* RENDELT PREVIEW TEXT */}
-                                <div css={tw`flex-1 min-w-0`}>
-                                    <div css={tw`flex justify-between items-center mb-1`}>
-                                        <span css={tw`text-neutral-200 font-bold truncate text-xs font-sans`}>{serverName}</span>
-                                        <span css={tw`text-green-500 font-sans text-xs`}>📶 120/120</span>
+                            {/* MINECRAFT SZERVERSZOBA SÖTÉTÍTETT STÍLUSÚ HÁTTÉR - FIX GRAFIKAI VIBE */}
+                            <div 
+                                style={{ 
+                                    backgroundImage: "matrix(1, 0, 0, 1, 0, 0)",
+                                    backgroundColor: '#1e1e1e',
+                                    backgroundSize: '16px 16px',
+                                    imageRendering: 'pixelated'
+                                }}
+                                css={tw`w-full rounded p-3 shadow-2xl relative border border-neutral-950`}
+                            >
+                                <div css={tw`bg-black bg-opacity-80 border border-neutral-900 rounded p-3 font-mono text-sm shadow-inner flex items-start space-x-3 select-none`}>
+                                    
+                                    {/* DINAMIKUS IKON BOX */}
+                                    <div css={tw`w-16 h-16 bg-neutral-950 border border-neutral-800 rounded flex items-center justify-center flex-shrink-0 overflow-hidden`}>
+                                        {serverIcon === 'default' || !previewIconUrl ? (
+                                            <div css={tw`w-full h-full bg-gradient-to-br from-cyan-900 to-neutral-900 flex items-center justify-center text-[10px] text-cyan-400 font-sans font-bold tracking-tighter text-center uppercase`}>
+                                                DG LOGO
+                                            </div>
+                                        ) : (
+                                            <img src={previewIconUrl} alt="Server Icon Preview" css={tw`w-full h-full object-cover`} />
+                                        )}
                                     </div>
-                                    <div css={tw`text-sm break-words whitespace-pre-wrap leading-tight`}>
-                                        {parseMotdToHtml(motd)}
-                                    </div>
-                                </div>
 
+                                    {/* RENDELT PREVIEW TEXT */}
+                                    <div css={tw`flex-1 min-w-0`}>
+                                        <div css={tw`flex justify-between items-center mb-1`}>
+                                            <span css={tw`text-neutral-200 font-bold truncate text-xs font-sans`}>{serverName}</span>
+                                            <span css={tw`text-green-500 font-sans text-xs`}>📶 120/120</span>
+                                        </div>
+                                        <div css={tw`text-sm break-words whitespace-pre-wrap leading-tight text-neutral-200`}>
+                                            {parseMotdToHtml(motd)}
+                                        </div>
+                                    </div>
+
+                                </div>
                             </div>
                             <span css={tw`text-[11px] text-neutral-500 mt-2 block text-center leading-tight`}>
                                 Így látják a játékosok a szervert a kliensükben!
