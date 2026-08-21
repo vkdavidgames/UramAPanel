@@ -327,7 +327,7 @@ export default () => {
                                     backgroundSize: '16px 16px',
                                     imageRendering: 'pixelated'
                                 }}
-                                css={tw`w-full rounded p-3 shadow-2xl relative border border-neutral-950`}
+                                css={tw`w-full rounded p-3 shadow-2xl relative border border-neutral-900`}
                             >
                                 <div css={tw`bg-black bg-opacity-80 border border-neutral-900 rounded p-3 font-mono text-sm shadow-inner flex items-start space-x-3 select-none`}>
                                     
