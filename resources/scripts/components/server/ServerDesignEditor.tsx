@@ -332,7 +332,7 @@ export default () => {
                                 <div css={tw`bg-black bg-opacity-80 border border-neutral-900 rounded p-3 font-mono text-sm shadow-inner flex items-start space-x-3 select-none`}>
                                     
                                     {/* DINAMIKUS IKON BOX */}
-                                    <div css={tw`w-16 h-16 bg-neutral-950 border border-neutral-800 rounded flex items-center justify-center flex-shrink-0 overflow-hidden`}>
+                                    <div css={tw`w-16 h-16 bg-neutral-900 border border-neutral-800 rounded flex items-center justify-center flex-shrink-0 overflow-hidden`}>
                                         {serverIcon === 'default' || !previewIconUrl ? (
                                             <div css={tw`w-full h-full bg-gradient-to-br from-cyan-900 to-neutral-900 flex items-center justify-center text-[10px] text-cyan-400 font-sans font-bold tracking-tighter text-center uppercase`}>
                                                 DG LOGO
