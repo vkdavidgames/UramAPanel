@@ -134,14 +134,13 @@ export default () => {
         })
             .then((response) => {
                 if (response.data && response.data.status === 'success') {
-                    addFlash({ key: 'server-design', type: 'success', message: 'A szerver megjelenése sikeresen frissítve lett!' });
+                    addFlash({ key: 'server-design', type: 'success', message: 'A szerver megnyilvánulása frissítve lett!' });
                 } else {
-                    addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Hiba történt a mentés során.' });
+                    addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Hiba történt.' });
                 }
             })
-            .catch((error) => {
-                console.error(error);
-                addFlash({ key: 'server-design', type: 'error', message: 'Nem sikerült elküldeni a módosításokat a háttérmotornak.' });
+            .catch(() => {
+                addFlash({ key: 'server-design', type: 'error', message: 'Nem sikerült menteni.' });
             })
             .finally(() => {
                 setIsSubmitting(false);
@@ -188,7 +187,7 @@ export default () => {
 
             if (isMagicActive) {
                 return (
-                    <span key={index} style={currentStyle} className="magic-text">
+                    <span key={index} style={currentStyle}>
                         {part.split('').map((char, charIdx) => (
                             <span key={charIdx} style={{ display: 'inline-block', fontFamily: 'monospace' }}>
                                 {String.fromCharCode(33 + Math.floor(Math.random() * 60))}
@@ -201,7 +200,6 @@ export default () => {
             return <span key={index} style={currentStyle}>{part}</span>;
         });
     };
-
     return (
         <ServerContentBlock title={'Server Design'}>
             <FlashMessageRender byKey={'server-design'} css={tw`mb-4`} />
@@ -211,6 +209,7 @@ export default () => {
             ) : (
                 <div css={tw`grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1200px] mx-auto`}>
                     
+                    {/* BAL OLDAL: EMELT SZINTŰ SZERKESZTŐ PULT */}
                     <div css={tw`md:col-span-2 space-y-6`}>
                         <form onSubmit={handleFormSubmit}>
                             <TitledGreyBox title={'Szerver Megjelenés és MOTD Panel'}>
@@ -221,8 +220,9 @@ export default () => {
                                             Vizuális Minecraft Színválasztó Gombok
                                         </label>
                                         
+                                        {/* SZÍN PALETTA GOMBOK */}
                                         <div css={tw`flex flex-wrap gap-1.5 p-2 bg-neutral-900 border border-neutral-800 rounded-md`}>
-                                        {mcColors.map((color) => (
+                                            {mcColors.map((color) => (
                                                 <button
                                                     key={color.code}
                                                     type="button"
@@ -238,6 +238,7 @@ export default () => {
                                             ))}
                                         </div>
 
+                                        {/* STÍLUS GOMBOK (BENNE A LILA MÁGIKUS GOMBBAL) */}
                                         <div css={tw`flex flex-wrap gap-1.5 mt-2 p-1.5 bg-neutral-900 border border-neutral-800 rounded-md`}>
                                             {mcStyles.map((style) => (
                                                 <button
@@ -314,6 +315,7 @@ export default () => {
                         </form>
                     </div>
 
+                    {/* JOBB OLDAL: MINECRAFT MULTIPLAYER PREVIEW */}
                     <div css={tw`space-y-6`}>
                         <TitledGreyBox title={'Élő Szerverlista Előnézet'}>
                             <div 
@@ -336,6 +338,8 @@ export default () => {
                                         )}
                                     </div>
 
+                                    <div css={tw`flex-1 min-w-0`}>
+                                        <div css={tw`flex justify-between items-center mb-1`}>
                                     <div css={tw`flex-1 min-w-0`}>
                                         <div css={tw`flex justify-between items-center mb-1`}>
                                             <span css={tw`text-neutral-200 font-bold truncate text-xs font-sans`}>{serverName}</span>
