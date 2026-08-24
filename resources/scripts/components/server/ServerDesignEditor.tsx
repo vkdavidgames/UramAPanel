@@ -11,7 +11,6 @@ import axios from 'axios';
 
 export default () => {
     const serverName = ServerContext.useStoreState((state) => state.server.data?.name) || 'Minecraft Szerver';
-    const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
     const serverUuid = ServerContext.useStoreState((state) => state.server.data?.uuid);
     
     const { addFlash, clearFlashes } = useFlash();
@@ -54,9 +53,9 @@ export default () => {
     ];
 
     useEffect(() => {
-        if (!serverId) return;
+        if (!serverUuid) return;
         
-        axios.get(`/auth/design_backend.php?server_id=${serverId}`)
+        axios.get(`/auth/design_backend.php?server_uuid=${serverUuid}`)
             .then((response) => {
                 if (response.data && response.data.status === 'success') {
                     setMotd(response.data.motd || '');
@@ -65,24 +64,23 @@ export default () => {
                     addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Nem sikerült betölteni a dizájn beállításokat.' });
                 }
             })
-            .catch((error) => {
-                console.error(error);
+            .catch(() => {
                 addFlash({ key: 'server-design', type: 'error', message: 'Hiba történt a dizájn adatok lekérése közben.' });
             })
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [serverId]);
+    }, [serverUuid]);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !serverId) return;
+        if (!file || !serverUuid) return;
 
         setIsSubmittingFile(true);
         clearFlashes('server-design');
 
         const formData = new FormData();
-        formData.append('server_id', String(serverId));
+        formData.append('server_uuid', String(serverUuid));
         formData.append('icon_file', file);
 
         axios.post('/auth/design_backend.php', formData, {
@@ -98,7 +96,7 @@ export default () => {
             }
         })
         .catch(() => {
-            addFlash({ key: 'server-design', type: 'error', message: 'Hálózati hiba történt a kép feldolgozásakor.' });
+            addFlash({ key: 'server-design', type: 'error', message: 'Hálózati hiba történt.' });
         })
         .finally(() => {
             setIsSubmittingFile(false);
@@ -128,24 +126,23 @@ export default () => {
         clearFlashes('server-design');
 
         axios.post('/auth/design_backend.php', {
-            server_id: serverId,
+            server_uuid: serverUuid,
             motd: motd,
             icon: serverIcon
         })
-            .then((response) => {
-                if (response.data && response.data.status === 'success') {
-                    addFlash({ key: 'server-design', type: 'success', message: 'A szerver megjelenése sikeresen frissítve lett!' });
-                } else {
-                    addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Hiba történt a mentés során.' });
-                }
-            })
-            .catch((error) => {
-                console.error(error);
-                addFlash({ key: 'server-design', type: 'error', message: 'Nem sikerült elküldeni a módosításokat a háttérmotornak.' });
-            })
-            .finally(() => {
-                setIsSubmitting(false);
-            });
+        .then((response) => {
+            if (response.data && response.data.status === 'success') {
+                addFlash({ key: 'server-design', type: 'success', message: response.data.message });
+            } else {
+                addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Hiba történt.' });
+            }
+        })
+        .catch(() => {
+            addFlash({ key: 'server-design', type: 'error', message: 'Hiba a mentés során.' });
+        })
+        .finally(() => {
+            setIsSubmitting(false);
+        });
     };
 
     const parseMotdToHtml = (text: string) => {
@@ -220,7 +217,7 @@ export default () => {
                                         <label css={tw`text-xs font-semibold uppercase text-neutral-400 block mb-2`}>
                                             Vizuális Minecraft Színválasztó Gombok
                                         </label>
-                                                                                {/* SZÍN PALETTA GOMBOK */}
+                                        
                                         <div css={tw`flex flex-wrap gap-1.5 p-2 bg-neutral-900 border border-neutral-800 rounded-md`}>
                                             {mcColors.map((color) => (
                                                 <button
@@ -238,7 +235,6 @@ export default () => {
                                             ))}
                                         </div>
 
-                                        {/* STÍLUS GOMBOK (BENNE A LILA MÁGIKUS GOMBBAL) */}
                                         <div css={tw`flex flex-wrap gap-1.5 mt-2 p-1.5 bg-neutral-900 border border-neutral-800 rounded-md`}>
                                             {mcStyles.map((style) => (
                                                 <button
@@ -315,7 +311,7 @@ export default () => {
                         </form>
                     </div>
 
-                    {/* JOBB OLDAL: MINECRAFT MULTIPLAYER PREVIEW */}
+                    {/* JOBB OLDAL: MINECRAFT MULTIPLAYER LISTA ELŐNÉZET */}
                     <div css={tw`space-y-6`}>
                         <TitledGreyBox title={'Élő Szerverlista Előnézet'}>
                             <div 
@@ -324,11 +320,11 @@ export default () => {
                                     backgroundSize: '16px 16px',
                                     imageRendering: 'pixelated'
                                 }}
-                                css={tw`w-full rounded p-3 shadow-2xl relative border border-neutral-900`}
+                                css={tw`w-full rounded p-3 shadow-2xl relative border border-neutral-950`}
                             >
                                 <div css={tw`bg-black bg-opacity-80 border border-neutral-900 rounded p-3 font-mono text-sm shadow-inner flex items-start space-x-3 select-none`}>
                                     
-                                    <div css={tw`w-16 h-16 bg-neutral-900 border border-neutral-800 rounded flex items-center justify-center flex-shrink-0 overflow-hidden`}>
+                                    <div css={tw`w-16 h-16 bg-neutral-950 border border-neutral-800 rounded flex items-center justify-center flex-shrink-0 overflow-hidden`}>
                                         {serverIcon === 'default' || !previewIconUrl ? (
                                             <div css={tw`w-full h-full bg-gradient-to-br from-cyan-900 to-neutral-900 flex items-center justify-center text-[10px] text-cyan-400 font-sans font-bold tracking-tighter text-center uppercase`}>
                                                 DG LOGO
