@@ -7,7 +7,7 @@ import TitledGreyBox from '@/components/elements/TitledGreyBox';
 import Spinner from '@/components/elements/Spinner';
 import Button from '@/components/elements/Button';
 import tw from 'twin.macro';
-import axios from 'axios';
+import http from '@/api/http';
 
 export default () => {
     const serverName = ServerContext.useStoreState((state) => state.server.data?.name) || 'Minecraft Szerver';
@@ -55,17 +55,18 @@ export default () => {
     useEffect(() => {
         if (!serverUuid) return;
         
-        axios.get(`/auth/design_backend.php?server_uuid=${serverUuid}`)
-            .then((response) => {
-                if (response.data && response.data.status === 'success') {
-                    setMotd(response.data.motd || '');
-                    setServerIcon(response.data.icon || 'default');
+        http.get(`/auth/design_backend.php?server_uuid=${serverUuid}`)
+            .then(({ data }) => {
+                if (data && data.status === 'success') {
+                    setMotd(data.motd || '');
+                    setServerIcon(data.icon || 'default');
                 } else {
-                    addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Nem sikerült betölteni a dizájn beállításokat.' });
+                    addFlash({ key: 'server-design', type: 'error', message: data.message || 'Nem sikerült betölteni a beállításokat.' });
                 }
             })
-            .catch(() => {
-                addFlash({ key: 'server-design', type: 'error', message: 'Hiba történt a dizájn adatok lekérése közben.' });
+            .catch((err) => {
+                const msg = err.response?.data?.message || 'Hiba történt az adatok lekérése során.';
+                addFlash({ key: 'server-design', type: 'error', message: msg });
             })
             .finally(() => {
                 setIsLoading(false);
@@ -83,20 +84,21 @@ export default () => {
         formData.append('server_uuid', String(serverUuid));
         formData.append('icon_file', file);
 
-        axios.post('/auth/design_backend.php', formData, {
+        http.post('/auth/design_backend.php', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         })
-        .then((response) => {
-            if (response.data && response.data.status === 'success') {
+        .then(({ data }) => {
+            if (data && data.status === 'success') {
                 setServerIcon('custom');
                 setPreviewIconUrl(URL.createObjectURL(file));
-                addFlash({ key: 'server-design', type: 'success', message: response.data.message });
+                addFlash({ key: 'server-design', type: 'success', message: data.message });
             } else {
-                addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Hiba a feltöltés közben.' });
+                addFlash({ key: 'server-design', type: 'error', message: data.message || 'Hiba a feltöltés közben.' });
             }
         })
-        .catch(() => {
-            addFlash({ key: 'server-design', type: 'error', message: 'Hálózati hiba történt.' });
+        .catch((err) => {
+            const msg = err.response?.data?.message || 'Hálózati hiba történt a feltöltéskor.';
+            addFlash({ key: 'server-design', type: 'error', message: msg });
         })
         .finally(() => {
             setIsUploading(false);
@@ -125,20 +127,21 @@ export default () => {
         setIsSubmitting(true);
         clearFlashes('server-design');
 
-        axios.post('/auth/design_backend.php', {
+        http.post('/auth/design_backend.php', {
             server_uuid: serverUuid,
             motd: motd,
             icon: serverIcon
         })
-        .then((response) => {
-            if (response.data && response.data.status === 'success') {
-                addFlash({ key: 'server-design', type: 'success', message: response.data.message });
+        .then(({ data }) => {
+            if (data && data.status === 'success') {
+                addFlash({ key: 'server-design', type: 'success', message: data.message });
             } else {
-                addFlash({ key: 'server-design', type: 'error', message: response.data.message || 'Hiba történt.' });
+                addFlash({ key: 'server-design', type: 'error', message: data.message || 'Hiba történt a mentéskor.' });
             }
         })
-        .catch(() => {
-            addFlash({ key: 'server-design', type: 'error', message: 'Hiba a mentés során.' });
+        .catch((err) => {
+            const msg = err.response?.data?.message || 'Hiba történt a mentés során.';
+            addFlash({ key: 'server-design', type: 'error', message: msg });
         })
         .finally(() => {
             setIsSubmitting(false);
