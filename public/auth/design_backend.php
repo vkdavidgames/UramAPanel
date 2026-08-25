@@ -48,39 +48,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['icon_file'])) {
 
     if (empty($server_uuid)) { die(json_encode(["status" => "error", "message" => "Érvénytelen szerver azonosító."])); }
 
-    $stmt_full = $conn->prepare("SELECT id, uuid, user_id FROM servers WHERE uuid LIKE ?");
+    // Lekérjük a gyári adatokat a servers táblából
+    $stmt_full = $conn->prepare("SELECT id, uuid, user_id, node_id FROM servers WHERE uuid LIKE ?");
     $search_uuid = $server_uuid . "%";
-    $stmt_full->bind_param("s", $search_uuid); $stmt_full->execute(); $stmt_full->bind_result($internal_id, $long_uuid, $user_id);
+    $stmt_full->bind_param("s", $search_uuid); $stmt_full->execute(); $stmt_full->bind_result($internal_id, $long_uuid, $user_id, $node_id);
     if (!$stmt_full->fetch()) { $stmt_full->close(); die(json_encode(["status" => "error", "message" => "A szerver nem található a panelen."])); }
     $stmt_full->close();
     
     $long_uuid = trim($long_uuid);
     $short_uuid = substr($long_uuid, 0, 8);
 
-    // 1. MEGNÉZZÜK, HOGY LÉTEZIK-E MÁR A REKORD
+    // Megpróbáljuk kihalászni a gyári portot az allocations táblából a kényszerített beszúráshoz
+    $stmt_port = $conn->prepare("SELECT port FROM allocations WHERE server_id = ? LIMIT 1");
+    $stmt_port->bind_param("i", $internal_id); $stmt_port->execute(); $stmt_port->bind_result($fallback_port);
+    if (!$stmt_port->fetch()) { $fallback_port = 25565; }
+    $stmt_port->close();
+
+    // 1. MEGNÉZZÜK, HOGY LÉTEZIK-E MÁR A SOR AZ EGYEDI TÁBLÁBAN
     $stmt_check = $conn->prepare("SELECT id FROM allocated_domains WHERE pterodactyl_server_id = ?");
     $stmt_check->bind_param("s", $short_uuid); $stmt_check->execute(); $stmt_check->store_result();
     $exists = ($stmt_check->num_rows > 0); $stmt_check->close();
 
     if ($exists) {
-        // Tiszta UPDATE, zéró hiba lehetőség
+        // Ha létezik, egyszerűen csak frissítjük a MOTD-t és az ikont
         $stmt = $conn->prepare("UPDATE allocated_domains SET motd = ?, icon = ? WHERE pterodactyl_server_id = ?");
         $stmt->bind_param("sss", $motd, $icon, $short_uuid);
     } else {
-        // Tiszta INSERT, ha teljesen új lenne a gép
-        $stmt = $conn->prepare("INSERT INTO allocated_domains (id, pterodactyl_user_id, pterodactyl_server_id, subdomain, port, allocation_type, node_id, motd, icon) VALUES (?, ?, ?, '', 0, 'port', 1, ?, ?)");
-        $stmt->bind_param("iisss", $internal_id, $user_id, $short_uuid, $motd, $icon);
+        // Ha nem létezik, egy TŰPONTOS, VALÓS ADATOKKAL TELI sort szúrunk be, így a MySQL nem dob hibát!
+        $default_sub = "server-" . $internal_id;
+        $default_type = "port";
+        $stmt = $conn->prepare("INSERT INTO allocated_domains (id, pterodactyl_user_id, pterodactyl_server_id, subdomain, port, allocation_type, node_id, motd, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("iisssisss", $internal_id, $user_id, $short_uuid, $default_sub, $fallback_port, $default_type, $node_id, $motd, $icon);
     }
     
     if (!$stmt->execute()) {
         $error_msg = $stmt->error; $stmt->close();
-        die(json_encode(["status" => "error", "message" => "SQL hiba: " . $error_msg]));
+        die(json_encode(["status" => "error", "message" => "Adatbázis mentési hiba: " . $error_msg]));
     }
     $stmt->close();
 
-    // 2. HA NINCS API KULCS BEÁLLÍTVA
+    // 2. HA NINCS API KULCS
     if (empty($api_key)) {
-        die(json_encode(["status" => "success", "message" => "Adatbázisba mentve, de az API_KEY_SERVER hiányzik a .env-ből!"]));
+        die(json_encode(["status" => "success", "message" => "Adatbázis sikeresen frissítve, de az API kulcs hiányzik!"]));
     }
 
     // 3. API HÍVÁS: server.properties írása
@@ -121,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['icon_file'])) {
         }
     }
 
-    echo json_encode(["status" => "success", "message" => "Dizájn elmentve és az API-val azonnal szinkronizálva!"]);
+    echo json_encode(["status" => "success", "message" => "Dizájn sikeresen mentve és szinkronizálva!"]);
     exit();
 }
 
@@ -130,9 +139,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['icon_file'])) {
     $server_uuid = trim($_POST['server_uuid'] ?? '');
     if (empty($server_uuid)) { die(json_encode(["status" => "error", "message" => "Érvénytelen szerver azonosító."])); }
 
-    $stmt_full = $conn->prepare("SELECT id, uuid, user_id FROM servers WHERE uuid LIKE ?");
+    $stmt_full = $conn->prepare("SELECT id, uuid, user_id, node_id FROM servers WHERE uuid LIKE ?");
     $search_uuid = $server_uuid . "%";
-    $stmt_full->bind_param("s", $search_uuid); $stmt_full->execute(); $stmt_full->bind_result($internal_id, $long_uuid, $user_id);
+    $stmt_full->bind_param("s", $search_uuid); $stmt_full->execute(); $stmt_full->bind_result($internal_id, $long_uuid, $user_id, $node_id);
     if (!$stmt_full->fetch()) { $stmt_full->close(); die(json_encode(["status" => "error", "message" => "A szerver nem található."])); }
     $stmt_full->close();
 
@@ -140,6 +149,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['icon_file'])) {
 
     $long_uuid = trim($long_uuid);
     $short_uuid = substr($long_uuid, 0, 8);
+
+    $stmt_port = $conn->prepare("SELECT port FROM allocations WHERE server_id = ? LIMIT 1");
+    $stmt_port->bind_param("i", $internal_id); $stmt_port->execute(); $stmt_port->bind_result($fallback_port);
+    if (!$stmt_port->fetch()) { $fallback_port = 25565; }
+    $stmt_port->close();
+
     $file = $_FILES['icon_file'];
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if (!in_array($ext, ['png', 'jpg', 'jpeg'])) { die(json_encode(["status" => "error", "message" => "Csak PNG, JPG és JPEG képek támogatottak!"])); }
@@ -175,10 +190,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['icon_file'])) {
             $stmt = $conn->prepare("UPDATE allocated_domains SET icon = ? WHERE pterodactyl_server_id = ?");
             $stmt->bind_param("ss", $icon_status, $short_uuid);
         } else {
-            $stmt = $conn->prepare("INSERT INTO allocated_domains (id, pterodactyl_user_id, pterodactyl_server_id, subdomain, port, allocation_type, node_id, icon) VALUES (?, ?, ?, '', 0, 'port', 1, ?)");
-            $stmt->bind_param("iiss", $internal_id, $user_id, $short_uuid, $icon_status);
+            // Ha nem létezik a sor, egy TŰPONTOS, minden kötelező mezőt tartalmazó rekordot szúrunk be
+            $default_sub = "server-" . $internal_id;
+            $default_type = "port";
+            $stmt = $conn->prepare("INSERT INTO allocated_domains (id, pterodactyl_user_id, pterodactyl_server_id, subdomain, port, allocation_type, node_id, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iissssis", $internal_id, $user_id, $short_uuid, $default_sub, $fallback_port, $default_type, $node_id, $icon_status);
         }
-        $stmt->execute(); $stmt->close();
+        $stmt->execute(); 
+        $stmt->close();
+        
         echo json_encode(["status" => "success", "message" => "Ikon sikeresen feltöltve és aktiválva!"]);
     } else {
         echo json_encode(["status" => "error", "message" => "Az API elutasította a képírást. Kód: {$http_code}"]);
