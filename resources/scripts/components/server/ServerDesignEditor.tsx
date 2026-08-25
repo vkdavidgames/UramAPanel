@@ -22,7 +22,7 @@ export default () => {
     const [previewIconUrl, setPreviewIconUrl] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isUploading, setIsSubmittingFile] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     const mcColors = [
         { code: '&0', name: 'Fekete', hex: '#000000' },
@@ -73,10 +73,10 @@ export default () => {
     }, [serverUuid]);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files[0];
+        const file = e.target.files?.[0];
         if (!file || !serverUuid) return;
 
-        setIsSubmittingFile(true);
+        setIsUploading(true);
         clearFlashes('server-design');
 
         const formData = new FormData();
@@ -99,7 +99,7 @@ export default () => {
             addFlash({ key: 'server-design', type: 'error', message: 'Hálózati hiba történt.' });
         })
         .finally(() => {
-            setIsSubmittingFile(false);
+            setIsUploading(false);
         });
     };
 
