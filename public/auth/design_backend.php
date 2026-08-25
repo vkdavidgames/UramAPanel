@@ -21,22 +21,17 @@ $db_pass = $_ENV['DB_PASSWORD'];
 $db_name = $_ENV['DB_DATABASE'];
 
 $panel_url = rtrim($_ENV['APP_URL'], '/');
-$api_key = $_ENV['API_KEY_SERVER']; // A központi Application API kulcsod
+$api_key = $_ENV['API_KEY_SERVER']; // Az éles Application API kulcsod
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port);
 if ($conn->connect_error) { die(json_encode(["status" => "error", "message" => "Adatbázis hiba."])); }
 
-// GET KÉRÉS: Adatok betöltése
+// GET KÉRÉS: Adatok betöltése frontoldali UUID alapján
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $server_id = intval($_GET['server_id'] ?? 0);
-    if ($server_id === 0) { die(json_encode(["status" => "error", "message" => "Hiányzó szerver ID."])); }
+    $server_uuid = trim($_GET['server_uuid'] ?? '');
+    if (empty($server_uuid)) { die(json_encode(["status" => "error", "message" => "Hiányzó szerver azonosító."])); }
 
-    $stmt_uuid = $conn->prepare("SELECT uuid FROM servers WHERE id = ?");
-    $stmt_uuid->bind_param("i", $server_id); $stmt_uuid->execute(); $stmt_uuid->bind_result($long_uuid);
-    if (!$stmt_uuid->fetch()) { $stmt_uuid->close(); die(json_encode(["status" => "success", "motd" => "", "icon" => "default"])); }
-    $stmt_uuid->close();
-
-    $short_uuid = substr(trim($long_uuid), 0, 8);
+    $short_uuid = substr($server_uuid, 0, 8);
 
     $stmt = $conn->prepare("SELECT motd, icon FROM allocated_domains WHERE pterodactyl_server_id = ?");
     $stmt->bind_param("s", $short_uuid); $stmt->execute(); $stmt->bind_result($motd, $icon);
@@ -46,29 +41,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit();
 }
 
-// POST KÉRÉS: Szöveges adatok mentése + PTERODACTYL API-ALAPÚ CONFIG MÓDOSÍTÁS!
+// POST KÉRÉS: Szöveges adatok mentése + PTERODACTYL API CONFIG MÓDOSÍTÁS
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['icon_file'])) {
     $data = json_decode(file_get_contents("php://input"), true);
-    $server_id = intval($data['server_id'] ?? 0);
+    $server_uuid = trim($data['server_uuid'] ?? '');
     $motd = trim($data['motd'] ?? '');
     $icon = trim($data['icon'] ?? 'default');
 
-    if ($server_id === 0) { die(json_encode(["status" => "error", "message" => "Érvénytelen szerver ID."])); }
+    if (empty($server_uuid)) { die(json_encode(["status" => "error", "message" => "Érvénytelen szerver azonosító."])); }
 
-    $stmt_uuid = $conn->prepare("SELECT uuid FROM servers WHERE id = ?");
-    $stmt_uuid->bind_param("i", $server_id); $stmt_uuid->execute(); $stmt_uuid->bind_result($long_uuid);
-    if (!$stmt_uuid->fetch()) { $stmt_uuid->close(); die(json_encode(["status" => "error", "message" => "Szerver nem található."])); }
-    $stmt_uuid->close();
+    // Megkeressük a gyári táblából a belső ID-t és a teljes hosszú UUID-t azonos időben
+    $stmt_full = $conn->prepare("SELECT id, uuid FROM servers WHERE uuid LIKE ?");
+    $search_uuid = $server_uuid . "%";
+    $stmt_full->bind_param("s", $search_uuid); $stmt_full->execute(); $stmt_full->bind_result($internal_id, $long_uuid);
+    if (!$stmt_full->fetch()) { $stmt_full->close(); die(json_encode(["status" => "error", "message" => "A szerver nem található a panelen."])); }
+    $stmt_full->close();
     
     $long_uuid = trim($long_uuid);
     $short_uuid = substr($long_uuid, 0, 8);
 
-    // 1. Frissítjük a belső egyedi adatbázisunkat
+    // 1. Frissítjük a mi egyedi adatbázisunkat
     $stmt = $conn->prepare("UPDATE allocated_domains SET motd = ?, icon = ? WHERE pterodactyl_server_id = ?");
     $stmt->bind_param("sss", $motd, $icon, $short_uuid); $stmt->execute(); $stmt->close();
 
-    // 2. GYÁRI API HÍVÁS: Lekérjük a szerver properties tartalmát a panelen keresztül
-    $file_url = "{$panel_url}/api/application/servers/{$server_id}/files/contents?file=server.properties";
+    // 2. GYÁRI API HÍVÁS: Lekérjük a szerver properties tartalmát a panelen keresztül (belső ID-val)
+    $file_url = "{$panel_url}/api/application/servers/{$internal_id}/files/contents?file=server.properties";
     
     $ch = curl_init($file_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -85,8 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['icon_file'])) {
         }
         $new_content = implode("\n", $lines);
 
-        // KÜLDÉS AZ API-NAK: Biztonságosan elmentjük a frissített fájlt a Pterodactyl-al
-        $write_url = "{$panel_url}/api/application/servers/{$server_id}/files/write?file=server.properties";
+        // KÜLDÉS AZ API-NAK: Elmentjük a frissített fájlt a Pterodactyl belső magjával
+        $write_url = "{$panel_url}/api/application/servers/{$internal_id}/files/write?file=server.properties";
         $ch_write = curl_init($write_url);
         curl_setopt($ch_write, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch_write, CURLOPT_POST, true);
@@ -99,22 +96,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['icon_file'])) {
     exit();
 }
 
-// POST KÉRÉS: Ikon feltöltés Pterodactyl API-n keresztül!
+// POST KÉRÉS: Ikon feltöltés Pterodactyl API-n keresztül
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['icon_file'])) {
-    $server_id = intval($_POST['server_id'] ?? 0);
-    if ($server_id === 0) { die(json_encode(["status" => "error", "message" => "Érvénytelen szerver ID."])); }
+    $server_uuid = trim($_POST['server_uuid'] ?? '');
+    if (empty($server_uuid)) { die(json_encode(["status" => "error", "message" => "Érvénytelen szerver azonosító."])); }
 
-    $stmt_uuid = $conn->prepare("SELECT uuid FROM servers WHERE id = ?");
-    $stmt_uuid->bind_param("i", $server_id); $stmt_uuid->execute(); $stmt_uuid->bind_result($long_uuid);
-    if (!$stmt_uuid->fetch()) { $stmt_uuid->close(); die(json_encode(["status" => "error", "message" => "Szerver nem található."])); }
-    $stmt_uuid->close();
+    $stmt_full = $conn->prepare("SELECT id, uuid FROM servers WHERE uuid LIKE ?");
+    $search_uuid = $server_uuid . "%";
+    $stmt_full->bind_param("s", $search_uuid); $stmt_full->execute(); $stmt_full->bind_result($internal_id, $long_uuid);
+    if (!$stmt_full->fetch()) { $stmt_full->close(); die(json_encode(["status" => "error", "message" => "A szerver nem található."])); }
+    $stmt_full->close();
 
-    $short_uuid = substr(trim($long_uuid), 0, 8);
+    $long_uuid = trim($long_uuid);
+    $short_uuid = substr($long_uuid, 0, 8);
     $file = $_FILES['icon_file'];
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if (!in_array($ext, ['png', 'jpg', 'jpeg'])) { die(json_encode(["status" => "error", "message" => "Csak PNG, JPG és JPEG képek támogatottak!"])); }
 
-    // Kép átméretezése 64x64-es Minecraft formátumra a PHP memóriájában
     $src_img = ($ext === 'png') ? @imagecreatefrompng($file['tmp_name']) : @imagecreatefromjpeg($file['tmp_name']);
     if (!$src_img) { die(json_encode(["status" => "error", "message" => "A képfájl sérült."])); }
 
@@ -122,13 +120,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['icon_file'])) {
     imagealphablending($dst_img, false); imagesavealpha($dst_img, true);
     imagecopyresampled($dst_img, $src_img, 0, 0, 0, 0, 64, 64, imagesx($src_img), imagesy($src_img));
 
-    // Elmentjük átmenetileg a /tmp mappába, ahonnak az Nginx szabadon olvashat
     $tmp_path = "/tmp/server-icon-temp.png";
     imagepng($dst_img, $tmp_path);
     imagedestroy($src_img); imagedestroy($dst_img);
 
-    // PANEL API-ALAPÚ FÁJL FELTÖLTÉS INDÍTÁSA (MEGKERÜLVE A DOCKER BLOKKOT)
-    $upload_url = "{$panel_url}/api/application/servers/{$server_id}/files/write?file=server-icon.png";
+    // PANEL API FELTÖLTÉS INDÍTÁSA A BELSŐ ID ALAPJÁN
+    $upload_url = "{$panel_url}/api/application/servers/{$internal_id}/files/write?file=server-icon.png";
     
     $ch_upload = curl_init($upload_url);
     curl_setopt($ch_upload, CURLOPT_RETURNTRANSFER, true);
@@ -137,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['icon_file'])) {
     curl_setopt($ch_upload, CURLOPT_HTTPHEADER, ["Authorization: Bearer {$api_key}", "Content-Type: application/octet-stream"]);
     $res = curl_exec($ch_upload); $http_code = curl_getinfo($ch_upload, CURLINFO_HTTP_CODE); curl_close($ch_upload);
     
-    unlink($tmp_path); // Töröljük a szemetet
+    unlink($tmp_path);
 
     if ($http_code === 204 || $http_code === 200) {
         $icon_status = "custom";
@@ -145,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['icon_file'])) {
         $stmt->bind_param("ss", $icon_status, $short_uuid); $stmt->execute(); $stmt->close();
         echo json_encode(["status" => "success", "message" => "Ikon sikeresen rögzítve a Pterodactyl API-val!"]);
     } else {
-        echo json_encode(["status" => "error", "message" => "Az API elutasította a fájlírást (HTTP Kód: {$http_code}). Ellenőrizd az API kulcsodat!"]);
+        echo json_encode(["status" => "error", "message" => "Az API elutasította a fájlírást (HTTP Kód: {$http_code})."]);
     }
     exit();
 }
