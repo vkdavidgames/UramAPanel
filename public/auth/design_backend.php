@@ -1,6 +1,6 @@
 <?php
 // ===================================================
-// PTERODACTYL DESIGN BACKEND - FIXED SERVER_ID QUERY
+// PTERODACTYL DESIGN BACKEND - AUTO COLUMN DETECTION
 // ===================================================
 
 header('Content-Type: application/json');
@@ -40,6 +40,25 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
 
+    // 3. TÁBLA OSZLOPAINAK AUTOMATIKUS ANOMÁLIA-DETEKTÁLÁSA
+    $colStmt = $pdo->query("SHOW COLUMNS FROM allocated_domains");
+    $existingCols = $colStmt->fetchAll(PDO::FETCH_COLUMN);
+
+    // Segédfüggvény a dinamikus WHERE feltételhez
+    $buildWhereClause = function($uuid) use ($existingCols) {
+        if (in_array('server_uuid', $existingCols)) {
+            return ["WHERE server_uuid = :uuid", [':uuid' => $uuid]];
+        }
+        if (in_array('server_id', $existingCols)) {
+            return ["WHERE server_id = (SELECT id FROM servers WHERE uuid = :uuid LIMIT 1)", [':uuid' => $uuid]];
+        }
+        if (in_array('allocation_id', $existingCols)) {
+            return ["WHERE allocation_id IN (SELECT id FROM allocations WHERE server_id = (SELECT id FROM servers WHERE uuid = :uuid LIMIT 1))", [':uuid' => $uuid]];
+        }
+        
+        throw new Exception("Nem található azonosításra alkalmas oszlop (server_uuid, server_id, allocation_id) az allocated_domains táblában. Meglévő oszlopok: " . implode(', ', $existingCols));
+    };
+
     $method = $_SERVER['REQUEST_METHOD'];
 
     // ===================================================
@@ -51,15 +70,9 @@ try {
             throw new Exception("Hiányzó 'server_uuid' paraméter.");
         }
 
-        // JOIN használata a server_uuid -> server_id feloldáshoz
-        $stmt = $pdo->prepare("
-            SELECT ad.motd, ad.icon 
-            FROM allocated_domains ad 
-            JOIN servers s ON ad.server_id = s.id 
-            WHERE s.uuid = :uuid 
-            LIMIT 1
-        ");
-        $stmt->execute([':uuid' => $serverUuid]);
+        list($whereSql, $params) = $buildWhereClause($serverUuid);
+        $stmt = $pdo->prepare("SELECT motd, icon FROM allocated_domains {$whereSql} LIMIT 1");
+        $stmt->execute($params);
         $data = $stmt->fetch();
 
         echo json_encode([
@@ -83,7 +96,6 @@ try {
             $file = $_FILES['icon_file'];
             if ($file['error'] !== UPLOAD_ERR_OK) throw new Exception("Fájlfeltöltési hiba. Kód: " . $file['error']);
 
-            // Pterodactyl feltöltési URL igénylése
             $ch = curl_init("$pteroUrl/api/client/servers/$serverUuid/files/upload");
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
@@ -100,7 +112,6 @@ try {
                 throw new Exception("Nem sikerült feltöltési URL-t szerezni a paneltől (HTTP $uploadCode). Ellenőrizd a .env API kulcsát!");
             }
 
-            // Fájl elküldése Wings-nek (server-icon.png)
             $cfile = new CURLFile($file['tmp_name'], $file['type'], 'server-icon.png');
             $ch = curl_init($signedUrl . "&directory=/");
             curl_setopt_array($ch, [
@@ -115,13 +126,9 @@ try {
                 throw new Exception("A Wings elutasította a képfájlt (HTTP $pteroUploadCode).");
             }
 
-            // Adatbázis frissítése allekérdezéssel
-            $stmt = $pdo->prepare("
-                UPDATE allocated_domains 
-                SET icon = 'custom' 
-                WHERE server_id = (SELECT id FROM servers WHERE uuid = :uuid LIMIT 1)
-            ");
-            $stmt->execute([':uuid' => $serverUuid]);
+            list($whereSql, $params) = $buildWhereClause($serverUuid);
+            $stmt = $pdo->prepare("UPDATE allocated_domains SET icon = 'custom' {$whereSql}");
+            $stmt->execute($params);
 
             echo json_encode(['status' => 'success', 'message' => 'Egyedi ikon sikeresen feltöltve és beállítva!']);
             exit;
@@ -137,13 +144,11 @@ try {
 
         if (!$serverUuid) throw new Exception("Hiányzó 'server_uuid' mentésnél.");
 
-        // 1. Adatbázis frissítése allekérdezéssel
-        $stmt = $pdo->prepare("
-            UPDATE allocated_domains 
-            SET motd = :motd, icon = :icon 
-            WHERE server_id = (SELECT id FROM servers WHERE uuid = :uuid LIMIT 1)
-        ");
-        $stmt->execute([':motd' => $motd, ':icon' => $icon, ':uuid' => $serverUuid]);
+        // 1. Adatbázis frissítése
+        list($whereSql, $params) = $buildWhereClause($serverUuid);
+        $updateParams = array_merge([':motd' => $motd, ':icon' => $icon], $params);
+        $stmt = $pdo->prepare("UPDATE allocated_domains SET motd = :motd, icon = :icon {$whereSql}");
+        $stmt->execute($updateParams);
 
         // 2. server.properties MOTD módosítása Wings-en
         $ch = curl_init("$pteroUrl/api/client/servers/$serverUuid/files/contents?file=server.properties");
