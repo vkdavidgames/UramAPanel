@@ -16,17 +16,25 @@ function log_msg($msg) {
 }
 
 try {
-    // 1. KONFIGURÁCIÓK (Állítsd be a saját környezetednek megfelelően)
+// 1. KONFIGURÁCIÓK
     $ptero_url  = getenv('APP_URL');
     $ptero_key  = getenv('API_KEY_SERVER');
 
-    $db_host    = getenv('DB_HOST');
-    $db_name    = getenv('DB_DATABASE');
-    $db_user    = getenv('DB_USERNAME');
-    $db_pass    = getenv('DB_PASSWORD');
+    // Pterodactyl .env fájl automatikus beolvasása (ha létezik)
+    $env_path = '/var/www/pterodactyl/.env';
+    if (file_exists($env_path)) {
+        $env = parse_ini_file($env_path);
+        if ($env) {
+            $db_host = $env['DB_HOST'];
+            $db_port = $env['DB_PORT'];
+            $db_name = $env['DB_DATABASE'];
+            $db_user = $env['DB_USERNAME'];
+            $db_pass = $env['DB_PASSWORD'];
+        }
+    }
 
-    // Adatbázis kapcsolat
-    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass, [
+    // Adatbázis kapcsolat (port= kifejezett megadásával kikényszerítjük a TCP/IP-t)
+    $pdo = new PDO("mysql:host=$db_host;port=$db_port;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
