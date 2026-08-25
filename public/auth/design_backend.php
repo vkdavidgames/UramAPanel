@@ -1,40 +1,41 @@
 <?php
 // ===================================================
-// PTERODACTYL SERVER DESIGN BACKEND (GET / POST / MULTIPART)
+// PTERODACTYL DESIGN BACKEND - DIRECT .ENV PARSER
 // ===================================================
-
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
 
 header('Content-Type: application/json');
 
-$log_file = __DIR__ . '/debug.log';
-
-function log_msg($msg) {
-    global $log_file;
-    file_put_contents($log_file, "[" . date('Y-m-d H:i:s') . "] " . $msg . "\n", FILE_APPEND);
-}
-
 try {
-// 1. KONFIGURÁCIÓK
-    $ptero_url  = getenv('APP_URL');
-    $ptero_key  = getenv('API_KEY_SERVER');
+    // 1. .env FÁJL MANUÁLIS BEOLVASÁSA (PHP-FPM getenv hiba kivédése)
+    $envFile = '/var/www/pterodactyl/.env';
+    if (!file_exists($envFile)) {
+        throw new Exception("A .env fájl nem található a /var/www/pterodactyl/.env útvonalon.");
+    }
 
-    // Pterodactyl .env fájl automatikus beolvasása (ha létezik)
-    $env_path = '/var/www/pterodactyl/.env';
-    if (file_exists($env_path)) {
-        $env = parse_ini_file($env_path);
-        if ($env) {
-            $db_host = $env['DB_HOST'];
-            $db_port = $env['DB_PORT'];
-            $db_name = $env['DB_DATABASE'];
-            $db_user = $env['DB_USERNAME'];
-            $db_pass = $env['DB_PASSWORD'];
+    $env = [];
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (strpos($line, '#') === 0 || empty($line)) continue;
+        if (strpos($line, '=') !== false) {
+            list($key, $val) = explode('=', $line, 2);
+            $key = trim($key);
+            $val = trim($val, " \t\n\r\0\x0B\"'");
+            $env[$key] = $val;
         }
     }
 
-    // Adatbázis kapcsolat (port= kifejezett megadásával kikényszerítjük a TCP/IP-t)
-    $pdo = new PDO("mysql:host=$db_host;port=$db_port;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass, [
+    $dbHost = $env['DB_HOST'];
+    $dbPort = $env['DB_PORT'];
+    $dbName = $env['DB_DATABASE'];
+    $dbUser = $env['DB_USERNAME'];
+    $dbPass = $env['DB_PASSWORD'];
+
+    $pteroUrl = $env['APP_URL'];
+    $pteroKey = $env['API_KEY_SERVER'];
+
+    // 2. KÖZVETLEN TCP/IP ADATBÁZIS KAPCSOLÓDÁS
+    $pdo = new PDO("mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4", $dbUser, $dbPass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
@@ -42,18 +43,16 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
 
     // ===================================================
-    // A) GET KÉRÉS: ADATOK BETÖLTÉSE A REACT EFFECT-HEZ
+    // A) GET KÉRÉS: ADATOK BETÖLTÉSE
     // ===================================================
     if ($method === 'GET') {
-        $server_uuid = $_GET['server_uuid'] ?? null;
-        if (!$server_uuid) {
+        $serverUuid = $_GET['server_uuid'] ?? null;
+        if (!$serverUuid) {
             throw new Exception("Hiányzó 'server_uuid' paraméter.");
         }
 
-        log_msg("GET kérés érkezett - UUID: $server_uuid");
-
         $stmt = $pdo->prepare("SELECT motd, icon FROM allocated_domains WHERE server_uuid = :uuid LIMIT 1");
-        $stmt->execute([':uuid' => $server_uuid]);
+        $stmt->execute([':uuid' => $serverUuid]);
         $data = $stmt->fetch();
 
         echo json_encode([
@@ -65,147 +64,104 @@ try {
     }
 
     // ===================================================
-    // B) POST KÉRÉS: FILE FELTÖLTÉS VAGY FORM MENTÉS
+    // B) POST KÉRÉS: IKON FELTÖLTÉS VAGY MENTÉS
     // ===================================================
     if ($method === 'POST') {
 
-        // --- B1) IKON FILE FELTÖLTÉS (multipart/form-data) ---
+        // --- B1) IKON FELTÖLTÉS ---
         if (isset($_FILES['icon_file'])) {
-            $server_uuid = $_POST['server_uuid'] ?? null;
-            if (!$server_uuid) {
-                throw new Exception("Hiányzó 'server_uuid' az ikon feltöltésnél.");
-            }
-
-            log_msg("IKON FELTÖLTÉS indítva - UUID: $server_uuid");
+            $serverUuid = $_POST['server_uuid'] ?? null;
+            if (!$serverUuid) throw new Exception("Hiányzó 'server_uuid' az ikon feltöltésnél.");
 
             $file = $_FILES['icon_file'];
-            if ($file['error'] !== UPLOAD_ERR_OK) {
-                throw new Exception("Hiba történt a fájl feltöltése során. Kód: " . $file['error']);
-            }
+            if ($file['error'] !== UPLOAD_ERR_OK) throw new Exception("Fájlfeltöltési hiba. Kód: " . $file['error']);
 
-            // Aláírt feltöltési URL lekérése Pterodactyl-tól
-            $ch = curl_init("$ptero_url/api/client/servers/$server_uuid/files/upload");
+            // Pterodactyl feltöltési URL igénylése
+            $ch = curl_init("$pteroUrl/api/client/servers/$serverUuid/files/upload");
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HTTPHEADER => [
-                    "Authorization: Bearer $ptero_key",
-                    "Accept: application/json"
-                ]
+                CURLOPT_HTTPHEADER => ["Authorization: Bearer $pteroKey", "Accept: application/json"]
             ]);
-            $upload_res  = curl_exec($ch);
-            $upload_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $uploadRes  = curl_exec($ch);
+            $uploadCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
-            $upload_json = json_decode($upload_res, true);
-            $signed_url  = $upload_json['attributes']['url'] ?? null;
+            $uploadJson = json_decode($uploadRes, true);
+            $signedUrl  = $uploadJson['attributes']['url'] ?? null;
 
-            if ($upload_code !== 200 || !$signed_url) {
-                throw new Exception("Nem sikerült Pterodactyl feltöltési URL-t szerezni. HTTP: $upload_code");
+            if ($uploadCode !== 200 || !$signedUrl) {
+                throw new Exception("Nem sikerült feltöltési URL-t szerezni a paneltől (HTTP $uploadCode). Ellenőrizd a .env API kulcsát!");
             }
 
-            // Fájl elküldése Pterodactyl SFTP/Wings-re server-icon.png néven
+            // Fájl elküldése Wings-nek
             $cfile = new CURLFile($file['tmp_name'], $file['type'], 'server-icon.png');
-            $ch = curl_init($signed_url . "&directory=/");
+            $ch = curl_init($signedUrl . "&directory=/");
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => ['files' => $cfile]
             ]);
-            $ptero_upload_res  = curl_exec($ch);
-            $ptero_upload_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $pteroUploadCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
-            if ($ptero_upload_code < 200 || $ptero_upload_code >= 300) {
-                throw new Exception("A Pterodactyl elutasította a képfájlt. HTTP: $ptero_upload_code");
+            if ($pteroUploadCode < 200 || $pteroUploadCode >= 300) {
+                throw new Exception("A Wings elutasította a képfájlt (HTTP $pteroUploadCode).");
             }
 
-            // Adatbázis frissítése ikon státuszra
             $stmt = $pdo->prepare("UPDATE allocated_domains SET icon = 'custom' WHERE server_uuid = :uuid");
-            $stmt->execute([':uuid' => $server_uuid]);
+            $stmt->execute([':uuid' => $serverUuid]);
 
-            log_msg("IKON FELTÖLTVE SIKERESEN - UUID: $server_uuid");
-
-            echo json_encode([
-                'status'  => 'success',
-                'message' => 'Egyedi ikon sikeresen feltöltve és beállítva!'
-            ]);
+            echo json_encode(['status' => 'success', 'message' => 'Egyedi ikon sikeresen feltöltve és beállítva!']);
             exit;
         }
 
-        // --- B2) FORM MENTÉS (JSON: MOTD & ICON SETTING) ---
-        $raw_input = file_get_contents('php://input');
-        $json_data = json_decode($raw_input, true);
+        // --- B2) MOTD ÉS IKON MENTÉSE ---
+        $rawData  = file_get_contents('php://input');
+        $jsonData = json_decode($rawData, true);
 
-        if (!$json_data) {
-            throw new Exception("Érvénytelen JSON kérés érkezett.");
-        }
+        $serverUuid = $jsonData['server_uuid'] ?? null;
+        $motd       = $jsonData['motd'] ?? '';
+        $icon       = $jsonData['icon'] ?? 'default';
 
-        $server_uuid = $json_data['server_uuid'] ?? null;
-        $motd        = $json_data['motd'] ?? '';
-        $icon        = $json_data['icon'] ?? 'default';
+        if (!$serverUuid) throw new Exception("Hiányzó 'server_uuid' mentésnél.");
 
-        if (!$server_uuid) {
-            throw new Exception("Hiányzó 'server_uuid' mentésnél.");
-        }
-
-        log_msg("BEÁLLÍTÁSOK MENTÉSE - UUID: $server_uuid | MOTD: $motd | ICON: $icon");
-
-        // 1. Adatbázis frissítés
+        // 1. Adatbázis frissítése
         $stmt = $pdo->prepare("UPDATE allocated_domains SET motd = :motd, icon = :icon WHERE server_uuid = :uuid");
-        $stmt->execute([
-            ':motd' => $motd,
-            ':icon' => $icon,
-            ':uuid' => $server_uuid
-        ]);
+        $stmt->execute([':motd' => $motd, ':icon' => $icon, ':uuid' => $serverUuid]);
 
-        // 2. server.properties MOTD cseréje Pterodactyl-on
-        $ch = curl_init("$ptero_url/api/client/servers/$server_uuid/files/contents?file=server.properties");
+        // 2. server.properties MOTD módosítása Wings-en
+        $ch = curl_init("$pteroUrl/api/client/servers/$serverUuid/files/contents?file=server.properties");
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => [
-                "Authorization: Bearer $ptero_key",
-                "Accept: application/json"
-            ]
+            CURLOPT_HTTPHEADER => ["Authorization: Bearer $pteroKey", "Accept: application/json"]
         ]);
-        $props_content = curl_exec($ch);
-        $http_code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $propsContent = curl_exec($ch);
+        $httpCode     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($http_code === 200 && $props_content !== false) {
-            if (preg_match('/^motd=.*$/m', $props_content)) {
-                $new_props = preg_replace('/^motd=.*$/m', 'motd=' . $motd, $props_content);
+        if ($httpCode === 200 && $propsContent !== false) {
+            if (preg_match('/^motd=.*$/m', $propsContent)) {
+                $newProps = preg_replace('/^motd=.*$/m', 'motd=' . $motd, $propsContent);
             } else {
-                $new_props = $props_content . "\nmotd=" . $motd;
+                $newProps = $propsContent . "\nmotd=" . $motd;
             }
 
-            $ch = curl_init("$ptero_url/api/client/servers/$server_uuid/files/write?file=server.properties");
+            $ch = curl_init("$pteroUrl/api/client/servers/$serverUuid/files/write?file=server.properties");
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => $new_props,
-                CURLOPT_HTTPHEADER => [
-                    "Authorization: Bearer $ptero_key",
-                    "Content-Type: text/plain"
-                ]
+                CURLOPT_POSTFIELDS => $newProps,
+                CURLOPT_HTTPHEADER => ["Authorization: Bearer $pteroKey", "Content-Type: text/plain"]
             ]);
             curl_exec($ch);
             curl_close($ch);
         }
 
-        log_msg("BEÁLLÍTÁSOK MENTVE SIKERESEN - UUID: $server_uuid");
-
-        echo json_encode([
-            'status'  => 'success',
-            'message' => 'A dizájn beállítások sikeresen elmentve!'
-        ]);
+        echo json_encode(['status' => 'success', 'message' => 'A dizájn beállítások sikeresen elmentve!']);
         exit;
     }
 
 } catch (Exception $e) {
-    log_msg("HIBA: " . $e->getMessage());
     http_response_code(400);
-    echo json_encode([
-        'status'  => 'error',
-        'message' => $e->getMessage()
-    ]);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
