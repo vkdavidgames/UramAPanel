@@ -65,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['icon_file'])) {
 
     // 2. Kényszerített írás a server.properties fájlba (hibatűrő Try ágban)
     $config_file = "/var/lib/pterodactyl/volumes/" . $long_uuid . "/server.properties";
-    @current_user_abort(); // Megnyitjuk a PHP fájlkezelőt
     
     if (file_exists($config_file) && is_writable($config_file)) {
         $lines = file($config_file, FILE_IGNORE_NEW_LINES);
