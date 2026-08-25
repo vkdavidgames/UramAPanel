@@ -1,15 +1,15 @@
 <?php
 // ===================================================
-// PTERODACTYL DESIGN BACKEND - DIRECT .ENV PARSER
+// PTERODACTYL DESIGN BACKEND - FIXED SERVER_ID QUERY
 // ===================================================
 
 header('Content-Type: application/json');
 
 try {
-    // 1. .env FÁJL MANUÁLIS BEOLVASÁSA (PHP-FPM getenv hiba kivédése)
+    // 1. .env FÁJL BEOLVASÁSA
     $envFile = '/var/www/pterodactyl/.env';
     if (!file_exists($envFile)) {
-        throw new Exception("A .env fájl nem található a /var/www/pterodactyl/.env útvonalon.");
+        throw new Exception("A .env fájl nem található.");
     }
 
     $env = [];
@@ -34,7 +34,7 @@ try {
     $pteroUrl = $env['APP_URL'];
     $pteroKey = $env['API_KEY_SERVER'];
 
-    // 2. KÖZVETLEN TCP/IP ADATBÁZIS KAPCSOLÓDÁS
+    // 2. TCP/IP ADATBÁZIS KAPCSOLÓDÁS
     $pdo = new PDO("mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4", $dbUser, $dbPass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
@@ -51,7 +51,14 @@ try {
             throw new Exception("Hiányzó 'server_uuid' paraméter.");
         }
 
-        $stmt = $pdo->prepare("SELECT motd, icon FROM allocated_domains WHERE server_uuid = :uuid LIMIT 1");
+        // JOIN használata a server_uuid -> server_id feloldáshoz
+        $stmt = $pdo->prepare("
+            SELECT ad.motd, ad.icon 
+            FROM allocated_domains ad 
+            JOIN servers s ON ad.server_id = s.id 
+            WHERE s.uuid = :uuid 
+            LIMIT 1
+        ");
         $stmt->execute([':uuid' => $serverUuid]);
         $data = $stmt->fetch();
 
@@ -93,7 +100,7 @@ try {
                 throw new Exception("Nem sikerült feltöltési URL-t szerezni a paneltől (HTTP $uploadCode). Ellenőrizd a .env API kulcsát!");
             }
 
-            // Fájl elküldése Wings-nek
+            // Fájl elküldése Wings-nek (server-icon.png)
             $cfile = new CURLFile($file['tmp_name'], $file['type'], 'server-icon.png');
             $ch = curl_init($signedUrl . "&directory=/");
             curl_setopt_array($ch, [
@@ -108,7 +115,12 @@ try {
                 throw new Exception("A Wings elutasította a képfájlt (HTTP $pteroUploadCode).");
             }
 
-            $stmt = $pdo->prepare("UPDATE allocated_domains SET icon = 'custom' WHERE server_uuid = :uuid");
+            // Adatbázis frissítése allekérdezéssel
+            $stmt = $pdo->prepare("
+                UPDATE allocated_domains 
+                SET icon = 'custom' 
+                WHERE server_id = (SELECT id FROM servers WHERE uuid = :uuid LIMIT 1)
+            ");
             $stmt->execute([':uuid' => $serverUuid]);
 
             echo json_encode(['status' => 'success', 'message' => 'Egyedi ikon sikeresen feltöltve és beállítva!']);
@@ -125,8 +137,12 @@ try {
 
         if (!$serverUuid) throw new Exception("Hiányzó 'server_uuid' mentésnél.");
 
-        // 1. Adatbázis frissítése
-        $stmt = $pdo->prepare("UPDATE allocated_domains SET motd = :motd, icon = :icon WHERE server_uuid = :uuid");
+        // 1. Adatbázis frissítése allekérdezéssel
+        $stmt = $pdo->prepare("
+            UPDATE allocated_domains 
+            SET motd = :motd, icon = :icon 
+            WHERE server_id = (SELECT id FROM servers WHERE uuid = :uuid LIMIT 1)
+        ");
         $stmt->execute([':motd' => $motd, ':icon' => $icon, ':uuid' => $serverUuid]);
 
         // 2. server.properties MOTD módosítása Wings-en
