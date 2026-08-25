@@ -17,13 +17,13 @@ function log_msg($msg) {
 
 try {
     // 1. KONFIGURÁCIÓK (Állítsd be a saját környezetednek megfelelően)
-    $ptero_url  = rtrim(getenv('PTERO_URL') ?: 'https://panel.a-te-domainod.hu', '/');
-    $ptero_key  = getenv('PTERO_API_KEY') ?: 'ITT_AZ_API_KULCSOD';
+    $ptero_url  = getenv('APP_URL');
+    $ptero_key  = getenv('API_KEY_SERVER');
 
-    $db_host    = getenv('DB_HOST') ?: '127.0.0.1';
-    $db_name    = getenv('DB_DATABASE') ?: 'panel';
-    $db_user    = getenv('DB_USERNAME') ?: 'pterodactyl';
-    $db_pass    = getenv('DB_PASSWORD') ?: 'SECRET_PASSWORD';
+    $db_host    = getenv('DB_HOST');
+    $db_name    = getenv('DB_DATABASE');
+    $db_user    = getenv('DB_USERNAME');
+    $db_pass    = getenv('DB_PASSWORD');
 
     // Adatbázis kapcsolat
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass, [
