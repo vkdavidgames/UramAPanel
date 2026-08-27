@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { ServerContext } from '@/state/server';
 import ServerContentBlock from '@/components/elements/ServerContentBlock';
 import FlashMessageRender from '@/components/FlashMessageRender';
@@ -18,7 +19,6 @@ export default () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     const [motd, setMotd] = useState('');
-    const [serverIcon, setServerIcon] = useState('default');
     const [previewIconUrl, setPreviewIconUrl] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,27 +52,30 @@ export default () => {
         { code: '&r', name: 'Reset', isMagic: false },
     ];
 
+    // 1. MOTD beolvasása közvetlenül a szerver server.properties fájljából
     useEffect(() => {
         if (!serverUuid) return;
         
-        http.get(`/auth/design_backend.php?server_uuid=${serverUuid}`)
+        http.get(`/api/client/servers/${serverUuid}/files/contents?file=server.properties`)
             .then(({ data }) => {
-                if (data && data.status === 'success') {
-                    setMotd(data.motd || '');
-                    setServerIcon(data.icon || 'default');
-                } else {
-                    addFlash({ key: 'server-design', type: 'error', message: data.message || 'Nem sikerült betölteni a beállításokat.' });
+                const match = data.match(/^motd=(.*)$/m);
+                if (match && match[1]) {
+                    setMotd(match[1]);
                 }
             })
             .catch((err) => {
-                const msg = err.response?.data?.message || 'Hiba történt az adatok lekérése során.';
-                addFlash({ key: 'server-design', type: 'error', message: msg });
+                addFlash({ 
+                    key: 'server-design', 
+                    type: 'error', 
+                    message: 'Nem sikerült beolvasni a server.properties fájlt. Győződj meg róla, hogy a fájl létezik!' 
+                });
             })
             .finally(() => {
                 setIsLoading(false);
             });
     }, [serverUuid]);
 
+    // 2. Ikon feltöltése közvetlenül a Wings-re Pterodactyl Client Upload API-val
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !serverUuid) return;
@@ -80,29 +83,37 @@ export default () => {
         setIsUploading(true);
         clearFlashes('server-design');
 
-        const formData = new FormData();
-        formData.append('server_uuid', String(serverUuid));
-        formData.append('icon_file', file);
+        // Feltöltési aláírt URL igénylése a paneltől
+        http.get(`/api/client/servers/${serverUuid}/files/upload`)
+            .then(({ data }) => {
+                const signedUrl = data.attributes.url;
+                
+                const formData = new FormData();
+                formData.append('files', file, 'server-icon.png');
 
-        http.post('/auth/design_backend.php', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        })
-        .then(({ data }) => {
-            if (data && data.status === 'success') {
-                setServerIcon('custom');
+                // Közvetlen feltöltés a Wings szervernek
+                return axios.post(`${signedUrl}&directory=/`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+            })
+            .then(() => {
                 setPreviewIconUrl(URL.createObjectURL(file));
-                addFlash({ key: 'server-design', type: 'success', message: data.message });
-            } else {
-                addFlash({ key: 'server-design', type: 'error', message: data.message || 'Hiba a feltöltés közben.' });
-            }
-        })
-        .catch((err) => {
-            const msg = err.response?.data?.message || 'Hálózati hiba történt a feltöltéskor.';
-            addFlash({ key: 'server-design', type: 'error', message: msg });
-        })
-        .finally(() => {
-            setIsUploading(false);
-        });
+                addFlash({ 
+                    key: 'server-design', 
+                    type: 'success', 
+                    message: 'Az egyedi server-icon.png sikeresen feltöltve a gyökérkönyvtárba!' 
+                });
+            })
+            .catch((err) => {
+                addFlash({ 
+                    key: 'server-design', 
+                    type: 'error', 
+                    message: 'Hiba történt az ikon feltöltése során: ' + (err.response?.data?.message || err.message) 
+                });
+            })
+            .finally(() => {
+                setIsUploading(false);
+            });
     };
 
     const insertCode = (code: string) => {
@@ -122,31 +133,49 @@ export default () => {
         }, 10);
     };
 
+    // 3. Mentés: A server.properties fájl módosítása és visszairása
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!serverUuid) return;
+
         setIsSubmitting(true);
         clearFlashes('server-design');
 
-        http.post('/auth/design_backend.php', {
-            server_uuid: serverUuid,
-            motd: motd,
-            icon: serverIcon
-        })
-        .then(({ data }) => {
-            if (data && data.status === 'success') {
-                addFlash({ key: 'server-design', type: 'success', message: data.message });
-            } else {
-                addFlash({ key: 'server-design', type: 'error', message: data.message || 'Hiba történt a mentéskor.' });
-            }
-        })
-        .catch((err) => {
-            const msg = err.response?.data?.message || 'Hiba történt a mentés során.';
-            addFlash({ key: 'server-design', type: 'error', message: msg });
-        })
-        .finally(() => {
-            setIsSubmitting(false);
-        });
+        http.get(`/api/client/servers/${serverUuid}/files/contents?file=server.properties`)
+            .then(({ data }) => {
+                let updatedContent = data;
+                if (pregMatchMotd(updatedContent)) {
+                    updatedContent = updatedContent.replace(/^motd=.*$/m, `motd=${motd}`);
+                } else {
+                    updatedContent += `\nmotd=${motd}`;
+                }
+
+                return http.post(
+                    `/api/client/servers/${serverUuid}/files/write?file=server.properties`,
+                    updatedContent,
+                    { headers: { 'Content-Type': 'text/plain' } }
+                );
+            })
+            .then(() => {
+                addFlash({ 
+                    key: 'server-design', 
+                    type: 'success', 
+                    message: 'A MOTD sikeresen elmentve a server.properties fájlba!' 
+                });
+            })
+            .catch((err) => {
+                addFlash({ 
+                    key: 'server-design', 
+                    type: 'error', 
+                    message: 'Hiba a mentés során: ' + (err.response?.data?.message || err.message) 
+                });
+            })
+            .finally(() => {
+                setIsSubmitting(false);
+            });
     };
+
+    const pregMatchMotd = (content: string) => /^motd=.*$/m.test(content);
 
     const parseMotdToHtml = (text: string) => {
         if (!text) return <span className="text-neutral-500">A DavidGames Minecraft Szervere</span>;
@@ -213,7 +242,7 @@ export default () => {
                     
                     <div css={tw`md:col-span-2 space-y-6`}>
                         <form onSubmit={handleFormSubmit}>
-                            <TitledGreyBox title={'Szerver Megjelenés és MOTD Panel'}>
+                            <TitledGreyBox title={'Szerver Megjelenés és MOTD Szerkesztő'}>
                                 <div css={tw`space-y-5`}>
                                     
                                     <div>
@@ -269,24 +298,15 @@ export default () => {
 
                                     <div>
                                         <label css={tw`text-xs font-semibold uppercase text-neutral-400 block mb-2`}>
-                                            Szerver Ikon Kezelés
+                                            Szerver Ikon Feltöltés (server-icon.png)
                                         </label>
                                         
                                         <div css={tw`flex flex-col sm:flex-row gap-4 items-start sm:items-center p-4 bg-neutral-900 border border-neutral-800 rounded-md`}>
-                                            <div css={tw`flex-1`}>
-                                                <select
-                                                    value={serverIcon}
-                                                    onChange={(e) => setServerIcon(e.target.value)}
-                                                    css={tw`w-full bg-neutral-800 border border-neutral-700 rounded-md text-neutral-200 p-2 text-sm focus:outline-none focus:border-cyan-500 mb-3`}
-                                                >
-                                                    <option value="default">Gyári Központi DavidGames logó használata</option>
-                                                    <option value="custom">Egyedi feltöltött ikon használata (server-icon.png)</option>
-                                                </select>
-                                                
+                                            <div css={tw`flex-1 w-full`}>
                                                 <input 
                                                     ref={fileInputRef}
                                                     type="file" 
-                                                    accept="image/png, image/jpeg, image/jpg" 
+                                                    accept="image/png" 
                                                     onChange={handleFileUpload} 
                                                     css={tw`hidden`} 
                                                 />
@@ -298,7 +318,7 @@ export default () => {
                                                     disabled={isUploading}
                                                     css={tw`w-full text-xs`}
                                                 >
-                                                    {isUploading ? 'Ikon feldolgozása...' : 'Új Ikon Feltöltése (.png, .jpg)'}
+                                                    {isUploading ? 'Ikon feltöltése...' : 'Új Ikon Kiválasztása (.png)'}
                                                 </Button>
                                             </div>
                                         </div>
@@ -327,7 +347,7 @@ export default () => {
                                 <div css={tw`bg-black bg-opacity-80 border border-neutral-900 rounded p-3 font-mono text-sm shadow-inner flex items-start space-x-3 select-none`}>
                                     
                                     <div css={tw`w-16 h-16 bg-neutral-900 border border-neutral-800 rounded flex items-center justify-center flex-shrink-0 overflow-hidden`}>
-                                        {serverIcon === 'default' || !previewIconUrl ? (
+                                        {!previewIconUrl ? (
                                             <div css={tw`w-full h-full bg-gradient-to-br from-cyan-900 to-neutral-900 flex items-center justify-center text-[10px] text-cyan-400 font-sans font-bold tracking-tighter text-center uppercase`}>
                                                 DG LOGO
                                             </div>
