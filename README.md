@@ -1,3 +1,12 @@
+<p align="center">
+  <a href="https://pterodactyl.io">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
+      <img alt="Pterodactyl" src=".github/assets/logo-light.svg" height="72">
+    </picture>
+  </a>
+</p>
+
 [![Logo Image](https://cdn.pterodactyl.io/logos/new/pterodactyl_logo.png)](https://pterodactyl.io)
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/pterodactyl/panel/ci.yaml?label=Tests&style=for-the-badge&branch=1.0-develop)
@@ -65,7 +74,7 @@ and there are plenty more games available provided by the community. Some of the
 * Xonotic
 * Starmade
 * Discord ATLBot, and most other Node.js/Python discord bots
-* [and many more...](https://pterodactyleggs.com)
+* [and many more...](https://eggs.pterodactyl.io)
 
 ## License
 
