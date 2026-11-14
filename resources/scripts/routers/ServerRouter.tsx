@@ -37,6 +37,9 @@ export default () => {
     const getServer = ServerContext.useStoreActions((actions) => actions.server.getServer);
     const clearServerState = ServerContext.useStoreActions((actions) => actions.clearServerState);
 
+    const dockerImage = ServerContext.useStoreState((state) => state.server.data?.dockerImage || '');
+    const isMinecraft = /minecraft|paper|purpur|spigot|forge|fabric|vanilla|bungeecord|velocity|waterfall/i.test(dockerImage);
+
     useEffect(
         () => () => {
             clearServerState();
