@@ -138,6 +138,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 ?>
+<!DOCTYPE html>
+<html lang="<?= $lang ?>">
+<head>
+    <meta charset="UTF-8">
+    <title><?= htmlspecialchars($t['title']) ?></title>
+    <style>
+        body { background: #0c0c0e; color: #e4e4e7; font-family: system-ui, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .reg-box { background: #141417; padding: 30px; border-radius: 12px; border: 1px solid #27272a; width: 100%; max-width: 360px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        h2 { margin-top: 0; text-align: center; color: #34d399; }
+        .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
+        label { font-size: 0.75rem; font-weight: bold; color: #a1a1aa; text-transform: uppercase; margin-bottom: 6px; }
+        input[type="text"], input[type="email"], input[type="password"] { background: #1c1c21; border: 1px solid #2a2a32; border-radius: 6px; color: #fff; padding: 12px; font-size: 0.9rem; }
+        input:focus { border-color: #34d399; outline: none; }
+        button { width: 100%; padding: 12px; background: #34d399; border: none; border-radius: 6px; color: #064e3b; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 10px; }
+        button:hover { background: #059669; color: #fff; }
+        .back-link { display: block; text-align: center; margin-top: 15px; color: #a1a1aa; text-decoration: none; font-size: 0.85rem; }
+        .back-link:hover { color: #fff; }
+        #msg { margin-top: 15px; text-align: center; font-weight: bold; }
+    </style>
 </head>
 <body>
     <div class="reg-box">
