@@ -19,6 +19,25 @@ const blueprintExtensions = [...new Set(blueprintRoutes.server.map((route) => ro
 const MINECRAFT_ONLY_PATHS = ['/config', '/extensions', '/design', '/players'];
 
 /**
+ * Shared check so both NavigationLinks and NavigationRouter agree on Minecraft servers.
+ */
+const useIsMinecraftServer = (): boolean => {
+  const dockerImage = ServerContext.useStoreState((state) => state.server.data?.dockerImage || '');
+  const variables = ServerContext.useStoreState((state) => state.server.data?.variables || []);
+
+  return (
+    /minecraft|paper|purpur|spigot|forge|neoforge|fabric|vanilla|bungeecord|velocity|waterfall|yolks:java_/i.test(
+      dockerImage
+    ) ||
+    variables.some((v) =>
+      ['MINECRAFT_VERSION', 'SERVER_JARFILE', 'MC_VERSION', 'NEOFORGE_VERSION', 'FORGE_VERSION'].includes(
+        v.envVariable
+      )
+    )
+  );
+};
+
+/**
  * Get the route egg IDs for each extension with server routes.
  */
 const useExtensionEggs = () => {
@@ -43,20 +62,89 @@ const useExtensionEggs = () => {
 export const NavigationLinks = () => {
   const rootAdmin = useStoreState((state) => state.user.data!.rootAdmin);
   const serverEgg = ServerContext.useStoreState((state) => state.server.data?.BlueprintFramework.eggId);
-  const dockerImage = ServerContext.useStoreState((state) => state.server.data?.dockerImage || '');
-  const eggId = ServerContext.useStoreState((state) => state.server.data?.BlueprintFramework?.eggId);
-  const variables = ServerContext.useStoreState((state) => state.server.data?.variables || []);
-
-const isMinecraft =
-    /minecraft|paper|purpur|spigot|forge|neoforge|fabric|vanilla|bungeecord|velocity|waterfall|yolks:java_/i.test(dockerImage) ||
-    variables.some((v) => ['MINECRAFT_VERSION', 'SERVER_JARFILE', 'MC_VERSION', 'NEOFORGE_VERSION', 'FORGE_VERSION'].includes(v.envVariable));
+  const isMinecraft = useIsMinecraftServer();
 
   const match = useRouteMatch<{ id: string }>();
   const to = (value: string, url = false) => {
     if (value === '/') {
       return url ? match.url : match.path;
     }
-    return `${(url ? match.url : match.path).replace(/\/*$/, '')}/${value.replace(/^\/+/, '')}`; }; const extensionEggs = useExtensionEggs();  return ( <> {/* Pterodactyl routes */} {routes.server .filter((route) => !!route.name) .filter((route) => !MINECRAFT_ONLY_PATHS.includes(route.path) || isMinecraft) .map((route) => route.permission ? ( <Can key={route.path} action={route.permission} matchAny> <NavLink to={to(route.path, true)} exact={route.exact}> {route.name} </NavLink> </Can> ) : ( <NavLink key={route.path} to={to(route.path, true)} exact={route.exact}> {route.name} </NavLink> ) )}  {/* Blueprint routes */} {blueprintRoutes.server.length > 0 && blueprintRoutes.server .filter((route) => !!route.name) .filter((route) => (route.adminOnly ? rootAdmin : true)) .filter((route) => extensionEggs[route.identifier].includes('-1') ? true : extensionEggs[route.identifier].find((id) => id === serverEgg?.toString()) ) .map((route) => route.permission ? ( <Can key={route.path} action={route.permission} matchAny> <NavLink to={to(route.path, true)} exact={route.exact}> {route.name} {route.adminOnly ? ( <> <span className={'hidden'}>(</span> <UiBadge>ADMIN</UiBadge> <span className={'hidden'}>)</span> </> ) : undefined} </NavLink> </Can> ) : ( <NavLink key={route.path} to={to(route.path, true)} exact={route.exact}> {route.name} {route.adminOnly ? ( <> <span className={'hidden'}>(</span> <UiBadge>ADMIN</UiBadge> <span className={'hidden'}>)</span> </> ) : undefined} </NavLink> ) )} </> ); };  export const NavigationRouter = () => { const rootAdmin = useStoreState((state) => state.user.data!.rootAdmin); const serverEgg = ServerContext.useStoreState((state) => state.server.data?.BlueprintFramework.eggId); const dockerImage = ServerContext.useStoreState((state) => state.server.data?.dockerImage || ''); const isMinecraft = /minecraft|paper|purpur|spigot|forge|fabric|vanilla|bungeecord|velocity|waterfall/i.test(dockerImage);  const match = useRouteMatch<{ id: string }>(); const to = (value: string, url = false) => { if (value === '/') { return url ? match.url : match.path; } return `${(url ? match.url : match.path).replace(/\/*$/, '')}/${value.replace(/^\/+/, '')}`;
+    return `${(url ? match.url : match.path).replace(/\/*$/, '')}/${value.replace(/^\/+/, '')}`;
+  };
+  const extensionEggs = useExtensionEggs();
+
+  return (
+    <>
+      {/* Pterodactyl routes */}
+      {routes.server
+        .filter((route) => !!route.name)
+        .filter((route) => !MINECRAFT_ONLY_PATHS.includes(route.path) || isMinecraft)
+        .map((route) =>
+          route.permission ? (
+            <Can key={route.path} action={route.permission} matchAny>
+              <NavLink to={to(route.path, true)} exact={route.exact}>
+                {route.name}
+              </NavLink>
+            </Can>
+          ) : (
+            <NavLink key={route.path} to={to(route.path, true)} exact={route.exact}>
+              {route.name}
+            </NavLink>
+          )
+        )}
+
+      {/* Blueprint routes */}
+      {blueprintRoutes.server.length > 0 &&
+        blueprintRoutes.server
+          .filter((route) => !!route.name)
+          .filter((route) => (route.adminOnly ? rootAdmin : true))
+          .filter((route) =>
+            extensionEggs[route.identifier].includes('-1')
+              ? true
+              : extensionEggs[route.identifier].find((id) => id === serverEgg?.toString())
+          )
+          .map((route) =>
+            route.permission ? (
+              <Can key={route.path} action={route.permission} matchAny>
+                <NavLink to={to(route.path, true)} exact={route.exact}>
+                  {route.name}
+                  {route.adminOnly ? (
+                    <>
+                      <span className={'hidden'}>(</span>
+                      <UiBadge>ADMIN</UiBadge>
+                      <span className={'hidden'}>)</span>
+                    </>
+                  ) : undefined}
+                </NavLink>
+              </Can>
+            ) : (
+              <NavLink key={route.path} to={to(route.path, true)} exact={route.exact}>
+                {route.name}
+                {route.adminOnly ? (
+                  <>
+                    <span className={'hidden'}>(</span>
+                    <UiBadge>ADMIN</UiBadge>
+                    <span className={'hidden'}>)</span>
+                  </>
+                ) : undefined}
+              </NavLink>
+            )
+          )}
+    </>
+  );
+};
+
+export const NavigationRouter = () => {
+  const rootAdmin = useStoreState((state) => state.user.data!.rootAdmin);
+  const serverEgg = ServerContext.useStoreState((state) => state.server.data?.BlueprintFramework.eggId);
+  const isMinecraft = useIsMinecraftServer();
+
+  const match = useRouteMatch<{ id: string }>();
+  const to = (value: string, url = false) => {
+    if (value === '/') {
+      return url ? match.url : match.path;
+    }
+    return `${(url ? match.url : match.path).replace(/\/*$/, '')}/${value.replace(/^\/+/, '')}`;
   };
   const extensionEggs = useExtensionEggs();
 
