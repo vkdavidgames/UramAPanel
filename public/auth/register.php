@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
 
         // Rögzítés ugyanabba a gyári adatbázisba, az egyedi meta táblába
-        $stmt_custom = $conn->prepare("INSERT INTO users_security_meta (pterodactyl_user_id, has_free_server, \`rank\`, last_ip, browser_hash) VALUES (?, 1, 0, ?, ?)");
+        $stmt_custom = $conn->prepare("INSERT INTO users_security_meta (pterodactyl_user_id, has_free_server, `rank`, last_ip, browser_hash) VALUES (?, 1, 0, ?, ?)");
         $stmt_custom->bind_param("iss", $pterodactyl_user_id, $user_ip, $browser_fp);
         $stmt_custom->execute(); $stmt_custom->close();
 
