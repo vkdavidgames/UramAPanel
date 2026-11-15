@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $hashed_password = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
     $uuid = bin2hex(random_bytes(16)); 
 
-    $stmt = $conn->prepare("INSERT INTO users (uuid, username, email, password, root_admin, created_at, updated_at) VALUES (?, ?, ?, ?, 0, NOW(), NOW())");
+    $stmt = $conn->prepare("INSERT INTO users (uuid, username, email, password, root_admin, use_totp, created_at, updated_at) VALUES (?, ?, ?, ?, 0, 0, NOW(), NOW())");
     $stmt->bind_param("ssss", $uuid, $username, $email, $hashed_password);
     
     if ($stmt->execute()) {
