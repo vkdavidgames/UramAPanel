@@ -1,6 +1,5 @@
 <?php
 ini_set('display_errors', 0);
-header("Content-Type: application/json");
 
 // Tiszta .env beolvasás
 $env_file = '/var/www/pterodactyl/.env';
@@ -25,6 +24,7 @@ $conn = new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port);
 if ($conn->connect_error) { die(json_encode(["status" => "error", "message" => "Adatbázis hiba."])); }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header("Content-Type: application/json");
     $email = trim($_POST['email'] ?? '');
     $username = trim($_POST['username'] ?? '');
     $password = trim($_POST['password'] ?? '');
