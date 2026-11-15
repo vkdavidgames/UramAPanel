@@ -44,7 +44,12 @@ export const NavigationLinks = () => {
   const rootAdmin = useStoreState((state) => state.user.data!.rootAdmin);
   const serverEgg = ServerContext.useStoreState((state) => state.server.data?.BlueprintFramework.eggId);
   const dockerImage = ServerContext.useStoreState((state) => state.server.data?.dockerImage || '');
-  const isMinecraft = /minecraft|paper|purpur|spigot|forge|neoforge|fabric|vanilla|bungeecord|velocity|waterfall/i.test(dockerImage);
+  const eggId = ServerContext.useStoreState((state) => state.server.data?.BlueprintFramework?.eggId);
+  const variables = ServerContext.useStoreState((state) => state.server.data?.variables || []);
+
+const isMinecraft =
+    /minecraft|paper|purpur|spigot|forge|neoforge|fabric|vanilla|bungeecord|velocity|waterfall|yolks:java_/i.test(dockerImage) ||
+    variables.some((v) => ['MINECRAFT_VERSION', 'SERVER_JARFILE', 'MC_VERSION', 'NEOFORGE_VERSION', 'FORGE_VERSION'].includes(v.envVariable));
 
   const match = useRouteMatch<{ id: string }>();
   const to = (value: string, url = false) => {
