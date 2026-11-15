@@ -16,7 +16,7 @@ import { UiBadge } from '@blueprint/ui';
 const blueprintExtensions = [...new Set(blueprintRoutes.server.map((route) => route.identifier))];
 
 // Add the exact paths from your routes.ts for ConfigEditor, ModsContainer, ServerDesignEditor, and PlayerManager
-const MINECRAFT_ONLY_PATHS = ['/config', '/mods', '/design', '/players'];
+const MINECRAFT_ONLY_PATHS = ['/config', '/extensions', '/design', '/players'];
 
 /**
  * Get the route egg IDs for each extension with server routes.
@@ -44,7 +44,7 @@ export const NavigationLinks = () => {
   const rootAdmin = useStoreState((state) => state.user.data!.rootAdmin);
   const serverEgg = ServerContext.useStoreState((state) => state.server.data?.BlueprintFramework.eggId);
   const dockerImage = ServerContext.useStoreState((state) => state.server.data?.dockerImage || '');
-  const isMinecraft = /minecraft|paper|purpur|spigot|forge|fabric|vanilla|bungeecord|velocity|waterfall/i.test(dockerImage);
+  const isMinecraft = /minecraft|paper|purpur|spigot|forge|neoforge|fabric|vanilla|bungeecord|velocity|waterfall/i.test(dockerImage);
 
   const match = useRouteMatch<{ id: string }>();
   const to = (value: string, url = false) => {
