@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="hidden" id="browser_fp" name="browser_fp">
             <div class="form-group"><label>Felhasználónév</label><input type="text" id="username" name="username" required></div>
             <div class="form-group"><label>Email cím</label><input type="email" id="email" name="email" required></div>
-            <div class="form-group"><label>Jelszó</label><input type="password" id="password" name="password" required></div>
+            <div class="form-group"><label>Jelszó</label><input type="password" id="password" name="password" autocomplete="new-password" required></div>
             <button type="submit">Fiók Létrehozása 🔑</button>
         </form>
         <a href="/auth/login" class="back-link">Vissza a bejelentkezéshez</a>
