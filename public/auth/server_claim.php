@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // DINAMIKUS FÉSZEK (EGG) ÉS INDÍTÁSI PARANCS MEGHATÁROZÁS
     $nest_id = 1; // Minecraft gyári Nest ID
-    $egg_id = 1;  // Alapértelmezett Vanilla
+    $egg_id = 2;  // Alapértelmezett Vanilla
     $startup_cmd = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JAR_FILE}}";
     $api_environment = [
         "SERVER_JARFILE" => "server.jar",
@@ -125,23 +125,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     if ($game === 'bedrock') {
-        $nest_id = 2; // Tegyük fel, hogy a Bedrock a 2-es Nestben van (vagy állítsd át a pontosra!)
-        $egg_id = 10; // Cseréld ki a te pontos Bedrock Egg ID-dra!
+        $nest_id = 5; // Tegyük fel, hogy a Bedrock a 2-es Nestben van (vagy állítsd át a pontosra!)
+        $egg_id = 15; // Cseréld ki a te pontos Bedrock Egg ID-dra!
         $startup_cmd = "./bedrock_server";
         $api_environment = ["BEDROCK_VERSION" => $mc_version, "LD_LIBRARY_PATH" => "."];
     } else {
         if ($type === 'modded') {
-            if ($loader === 'forge') { $egg_id = 3; }
+            if ($loader === 'forge') { $egg_id = 4; }
             elseif ($loader === 'fabric') { $egg_id = 18; $api_environment["FABRIC_VERSION"] = $loader_version; }
             elseif ($loader === 'quilt') { $egg_id = 21; $api_environment["QUILT_VERSION"] = $loader_version; }
             else { $egg_id = 16; $api_environment["NEOFORGE_VERSION"] = $loader_version; }
         } elseif ($type === 'plugins') {
             if ($loader === 'purpur') { $egg_id = 17; $api_environment["PURPUR_VERSION"] = $loader_version; }
             elseif ($loader === 'spigot') { $egg_id = 20; $api_environment["SPIGOT_VERSION"] = $loader_version; }
-            else { $egg_id = 2; $api_environment["PAPER_VERSION"] = $loader_version; }
+            else { $egg_id = 1; $api_environment["PAPER_VERSION"] = $loader_version; }
         } elseif ($type === 'bungeecord') {
             if ($loader === 'waterfall') { $egg_id = 19; }
-            else { $egg_id = 4; }
+            else { $egg_id = 3; }
             $startup_cmd = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JAR_FILE}}";
         }
     }
