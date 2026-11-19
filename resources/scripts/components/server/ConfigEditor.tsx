@@ -1,4 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
+import { useStoreState } from 'easy-peasy';
 import { ServerContext } from '@/state/server';
 import ServerContentBlock from '@/components/elements/ServerContentBlock';
 import FlashMessageRender from '@/components/FlashMessageRender';
@@ -18,6 +20,46 @@ interface ConfigProps {
 
 export default () => {
     const serverId = ServerContext.useStoreState((state) => state.server.data?.internalId);
+    const { i18n } = useTranslation();
+    const storeLang = useStoreState((state) => state.user.data?.language || '');
+    const userLang = localStorage.getItem('selectedLanguage') || i18n.language || storeLang;
+    const isHu = (userLang || (typeof navigator !== 'undefined' ? navigator.language : 'en'))
+        .toLowerCase()
+        .startsWith('hu');
+
+    const t = {
+        pageTitle: isHu ? 'Konfig Szerkesztő' : 'Config Editor',
+        boxTitle: isHu ? 'Szerver Beállítások (server.properties)' : 'Server Settings (server.properties)',
+        description: isHu
+            ? 'Módosítsd a szervered alapvető tulajdonságait anélkül, hogy a fájlkezelőben kellene manuálisan szerkesztened a beállításokat.'
+            : 'Modify your server’s core properties without having to manually edit files in the file manager.',
+        loading: isHu ? 'Konfigurációs adatok betöltése és elemzése...' : 'Loading and parsing configuration...',
+        loadErrFallback: isHu ? 'Nem sikerült beolvasni a konfigurációt.' : 'Failed to read configuration.',
+        loadErrCatch: isHu
+            ? 'Hiba történt a konfigurációs fájl beolvasása közben.'
+            : 'An error occurred while reading the configuration file.',
+        saveSuccess: isHu
+            ? 'A beállítások sikeresen mentve lettek és érvényesülnek a következő indításkor!'
+            : 'Settings saved successfully and will take effect on the next server start!',
+        saveErrFallback: isHu ? 'Ismeretlen hiba történt a mentés során.' : 'An unknown error occurred while saving.',
+        saveErrCatch: isHu
+            ? 'Nem sikerült menteni a beállításokat a háttérben.'
+            : 'Failed to save settings in the background.',
+        maxPlayers: isHu ? 'Maximális Játékosszám (max-players)' : 'Max Players (max-players)',
+        difficulty: isHu ? 'Játék Nehézsége (difficulty)' : 'Game Difficulty (difficulty)',
+        diffPeaceful: isHu ? 'Peaceful (Békés)' : 'Peaceful',
+        diffEasy: isHu ? 'Easy (Könnyű)' : 'Easy',
+        diffNormal: isHu ? 'Normal (Normál)' : 'Normal',
+        diffHard: isHu ? 'Hard (Nehéz)' : 'Hard',
+        pvp: isHu ? 'Játékosok közötti harc (pvp)' : 'Player vs Player (pvp)',
+        pvpOn: isHu ? 'Bekapcsolva (Engedélyezett)' : 'Enabled (Allowed)',
+        pvpOff: isHu ? 'Kikapcsolva (Tiltott)' : 'Disabled (Not allowed)',
+        onlineMode: isHu ? 'Online Mód / Prémium ellenőrzés (online-mode)' : 'Online Mode / Premium Check (online-mode)',
+        onlineTrue: isHu ? 'Csak Prémium (Eredeti Minecraft)' : 'Premium Only (Official Minecraft)',
+        onlineFalse: isHu ? 'Tört Mód (Minden kliens beléphet)' : 'Cracked Mode (All clients allowed)',
+        saveButton: isHu ? 'Módosítások Mentése' : 'Save Changes',
+    };
+
     const { addFlash, clearFlashes } = useFlash();
 
     const [config, setConfig] = useState<ConfigProps>({});
@@ -35,7 +77,7 @@ export default () => {
                     addFlash({
                         key: 'config-editor',
                         type: 'error',
-                        message: response.data.message || 'Nem sikerült beolvasni a konfigurációt.',
+                        message: response.data.message || t.loadErrFallback,
                     });
                 }
             })
@@ -44,7 +86,7 @@ export default () => {
                 addFlash({
                     key: 'config-editor',
                     type: 'error',
-                    message: 'Hiba történt a konfigurációs fájl beolvasása közben.',
+                    message: t.loadErrCatch,
                 });
             })
             .finally(() => {
@@ -70,13 +112,13 @@ export default () => {
                     addFlash({
                         key: 'config-editor',
                         type: 'success',
-                        message: 'A beállítások sikeresen mentve lettek és érvényesülnek a következő indításkor!',
+                        message: t.saveSuccess,
                     });
                 } else {
                     addFlash({
                         key: 'config-editor',
                         type: 'error',
-                        message: response.data.message || 'Ismeretlen hiba történt a mentés során.',
+                        message: response.data.message || t.saveErrFallback,
                     });
                 }
             })
@@ -85,7 +127,7 @@ export default () => {
                 addFlash({
                     key: 'config-editor',
                     type: 'error',
-                    message: 'Nem sikerült menteni a beállításokat a háttérben.',
+                    message: t.saveErrCatch,
                 });
             })
             .finally(() => {
@@ -94,7 +136,7 @@ export default () => {
     };
 
     return (
-        <ServerContentBlock title={'Config Editor'}>
+        <ServerContentBlock title={t.pageTitle}>
             <FlashMessageRender byKey={'config-editor'} css={tw`mb-4`} />
 
             {isLoading ? (
@@ -102,14 +144,14 @@ export default () => {
             ) : (
                 <div css={tw`max-w-xl mx-auto`}>
                     <form onSubmit={handleFormSubmit}>
-                        <TitledGreyBox title={'Szerver Beállítások (server.properties)'}>
+                        <TitledGreyBox title={t.boxTitle}>
                             <p css={tw`text-sm text-neutral-300 mb-6 leading-relaxed`}>
-                                Módosítsd a szervered alapvető tulajdonságait anélkül, hogy a fájlkezelőben kellene manuálisan szerkesztened a beállításokat.
+                                {t.description}
                             </p>
 
                             <div css={tw`space-y-4`}>
                                 <div>
-                                    <Label>Maximális Játékosszám (max-players)</Label>
+                                    <Label>{t.maxPlayers}</Label>
                                     <Input
                                         type={'number'}
                                         value={config['max-players'] || '20'}
@@ -118,44 +160,44 @@ export default () => {
                                 </div>
 
                                 <div>
-                                    <Label>Játék Nehézsége (difficulty)</Label>
+                                    <Label>{t.difficulty}</Label>
                                     <Select
                                         value={config['difficulty'] || 'easy'}
                                         onChange={(e) => handleInputChange('difficulty', e.target.value)}
                                     >
-                                        <option value={'peaceful'}>Peaceful (Békés)</option>
-                                        <option value={'easy'}>Easy (Könnyű)</option>
-                                        <option value={'normal'}>Normal (Normál)</option>
-                                        <option value={'hard'}>Hard (Nehéz)</option>
+                                        <option value={'peaceful'}>{t.diffPeaceful}</option>
+                                        <option value={'easy'}>{t.diffEasy}</option>
+                                        <option value={'normal'}>{t.diffNormal}</option>
+                                        <option value={'hard'}>{t.diffHard}</option>
                                     </Select>
                                 </div>
 
                                 <div>
-                                    <Label>Játékosok közötti harc (pvp)</Label>
+                                    <Label>{t.pvp}</Label>
                                     <Select
                                         value={config['pvp'] || 'true'}
                                         onChange={(e) => handleInputChange('pvp', e.target.value)}
                                     >
-                                        <option value={'true'}>Bekapcsolva (Engedélyezett)</option>
-                                        <option value={'false'}>Kikapcsolva (Tiltott)</option>
+                                        <option value={'true'}>{t.pvpOn}</option>
+                                        <option value={'false'}>{t.pvpOff}</option>
                                     </Select>
                                 </div>
 
                                 <div>
-                                    <Label>Online Mód / Prémium ellenőrzés (online-mode)</Label>
+                                    <Label>{t.onlineMode}</Label>
                                     <Select
                                         value={config['online-mode'] || 'true'}
                                         onChange={(e) => handleInputChange('online-mode', e.target.value)}
                                     >
-                                        <option value={'true'}>Csak Prémium (Eredeti Minecraft)</option>
-                                        <option value={'false'}>Tört Mód (Minden kliens beléphet)</option>
+                                        <option value={'true'}>{t.onlineTrue}</option>
+                                        <option value={'false'}>{t.onlineFalse}</option>
                                     </Select>
                                 </div>
                             </div>
 
                             <div css={tw`flex justify-end mt-6`}>
                                 <Button type={'submit'} size={'large'} isLoading={isSubmitting} disabled={isSubmitting}>
-                                    Módosítások Mentése
+                                    {t.saveButton}
                                 </Button>
                             </div>
                         </TitledGreyBox>

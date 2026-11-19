@@ -284,3 +284,589 @@ ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/t
 Flushed Blueprint stylesheet and scripts cache.
    INFO  Broadcasting queue restart signal.  
 
+ln: failed to create symbolic link '/var/www/pterodactyl/resources/views/blueprint/extensions/serverbackgrounds': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/serverbackgrounds': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/serverbackgrounds': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/serverbackgrounds': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/serverbackgrounds/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+rm: cannot remove '/var/www/pterodactyl/routes/blueprint/web/resourcemanager.php': No such file or directory
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/resourcemanager/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   201  100   201    0     0    815      0 --:--:-- --:--:-- --:--:--   817
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   201  100   201    0     0  10209      0 --:--:-- --:--:-- --:--:-- 10578
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100    68  100    68    0     0    230      0 --:--:-- --:--:-- --:--:--   230
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   201  100   201    0     0   7542      0 --:--:-- --:--:-- --:--:--  7730
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100    68  100    68    0     0   3247      0 --:--:-- --:--:-- --:--:--  3400
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+
+ln: failed to create symbolic link '/var/www/pterodactyl/public/assets/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/storage/extensions/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/public/fs/uramapaneltheme': File exists
+ln: failed to create symbolic link '/var/www/pterodactyl/.blueprint/extensions/uramapaneltheme/private': File exists
+
+   ERROR  The [public/storage] link already exists.  
+
+
+
+   INFO  Blade templates cached successfully.  
+
+
+   INFO  Configuration cached successfully.  
+
+
+   INFO  Route cache cleared successfully.  
+
+
+   INFO  Application cache cleared successfully.  
+
+Flushed Blueprint stylesheet and scripts cache.
+   INFO  Broadcasting queue restart signal.  
+

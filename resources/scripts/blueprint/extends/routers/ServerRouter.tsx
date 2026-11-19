@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { NavLink, Route, Switch, useRouteMatch } from 'react-router-dom';
 import TransitionRouter from '@/TransitionRouter';
@@ -17,6 +18,13 @@ const blueprintExtensions = [...new Set(blueprintRoutes.server.map((route) => ro
 
 // Add the exact paths from your routes.ts for ConfigEditor, ModsContainer, ServerDesignEditor, and PlayerManager
 const MINECRAFT_ONLY_PATHS = ['/config', '/extensions', '/design', '/players'];
+
+const TRANSLATED_LABELS: Record<string, { hu: string; en: string }> = {
+  'Config Editor': { hu: 'Konfig Szerkesztő', en: 'Config Editor' },
+  'Server Design': { hu: 'Szerver Kinézet', en: 'Server Design' },
+  'Player Manager': { hu: 'Játékos Kezelő', en: 'Player Manager' },
+  'Extension Manager': { hu: 'Bővítmények', en: 'Extension Manager' },
+};
 
 /**
  * Shared check so both NavigationLinks and NavigationRouter agree on Minecraft servers.
@@ -61,6 +69,13 @@ const useExtensionEggs = () => {
 
 export const NavigationLinks = () => {
   const rootAdmin = useStoreState((state) => state.user.data!.rootAdmin);
+  const { i18n } = useTranslation();
+  const storeLang = useStoreState((state) => state.user.data?.language || '');
+  const userLang = localStorage.getItem('selectedLanguage') || i18n.language || storeLang;
+  const isHu = (userLang || (typeof navigator !== 'undefined' ? navigator.language : 'en'))
+    .toLowerCase()
+    .startsWith('hu');
+
   const serverEgg = ServerContext.useStoreState((state) => state.server.data?.BlueprintFramework.eggId);
   const isMinecraft = useIsMinecraftServer();
 
@@ -73,6 +88,14 @@ export const NavigationLinks = () => {
   };
   const extensionEggs = useExtensionEggs();
 
+  const getLabel = (name?: string) => {
+    if (!name) return '';
+    if (TRANSLATED_LABELS[name]) {
+      return isHu ? TRANSLATED_LABELS[name].hu : TRANSLATED_LABELS[name].en;
+    }
+    return name;
+  };
+
   return (
     <>
       {/* Pterodactyl routes */}
@@ -83,12 +106,12 @@ export const NavigationLinks = () => {
           route.permission ? (
             <Can key={route.path} action={route.permission} matchAny>
               <NavLink to={to(route.path, true)} exact={route.exact}>
-                {route.name}
+                {getLabel(route.name)}
               </NavLink>
             </Can>
           ) : (
             <NavLink key={route.path} to={to(route.path, true)} exact={route.exact}>
-              {route.name}
+              {getLabel(route.name)}
             </NavLink>
           )
         )}
@@ -107,7 +130,7 @@ export const NavigationLinks = () => {
             route.permission ? (
               <Can key={route.path} action={route.permission} matchAny>
                 <NavLink to={to(route.path, true)} exact={route.exact}>
-                  {route.name}
+                  {getLabel(route.name)}
                   {route.adminOnly ? (
                     <>
                       <span className={'hidden'}>(</span>
@@ -119,7 +142,7 @@ export const NavigationLinks = () => {
               </Can>
             ) : (
               <NavLink key={route.path} to={to(route.path, true)} exact={route.exact}>
-                {route.name}
+                {getLabel(route.name)}
                 {route.adminOnly ? (
                   <>
                     <span className={'hidden'}>(</span>

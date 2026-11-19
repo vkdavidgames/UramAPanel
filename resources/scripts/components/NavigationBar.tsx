@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import * as React from 'react';
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
@@ -16,6 +17,7 @@ import Avatar from '@/components/Avatar';
 import BeforeNavigation from '@blueprint/components/Navigation/NavigationBar/BeforeNavigation';
 import AdditionalItems from '@blueprint/components/Navigation/NavigationBar/AdditionalItems';
 import AfterNavigation from '@blueprint/components/Navigation/NavigationBar/AfterNavigation';
+
 
 const RightNavigation = styled.div`
     & > a,
@@ -39,6 +41,10 @@ const RightNavigation = styled.div`
 export default () => {
     const name = useStoreState((state: ApplicationStore) => state.settings.data!.name);
     const rootAdmin = useStoreState((state: ApplicationStore) => state.user.data!.rootAdmin);
+    const { i18n } = useTranslation();
+    const storeLang = useStoreState((state: ApplicationStore) => state.user.data?.language || '');
+    const userLang = localStorage.getItem('selectedLanguage') || i18n.language || storeLang;
+    const isHu = (userLang || (typeof navigator !== 'undefined' ? navigator.language : 'en')).toLowerCase().startsWith('hu');
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const onTriggerLogout = () => {
@@ -86,7 +92,7 @@ export default () => {
                                 cursor: 'pointer'
                             }}
                         >
-                            Szerver Igénylés
+                            {isHu ? 'Szerver Igénylés' : 'Claim Server'}
                         </button>
 
                         <div id="claim-modal" style={{ display: 'none', position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 99999, justifyContent: 'center', alignItems: 'center', pointerEvents: 'auto' }}>
